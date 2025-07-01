@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.TrabalhoEngSoftware.chatbot.dto.FlashcardDTO;
 import br.com.TrabalhoEngSoftware.chatbot.entity.NoteEntity;
 import br.com.TrabalhoEngSoftware.chatbot.entity.SourceEntity;
 import br.com.TrabalhoEngSoftware.chatbot.repository.NoteRepository;
@@ -15,7 +16,6 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import br.com.TrabalhoEngSoftware.chatbot.dto.FlashcardSuggestionDTO;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -120,7 +120,7 @@ public class AiService {
      * @param count       Número de flashcards a ser gerado.
      * @return Uma lista de FlashcardSuggestionDTO.
      */
-    public List<FlashcardSuggestionDTO> generateFlashcardSuggestions(String noteContent, Long userId, int count) {
+    public List<FlashcardDTO> generateFlashcardSuggestions(String noteContent, Long userId, int count) {
         String systemPromptForFlashcards =
             "You are an AI assistant specialized in creating educational flashcards. " +
             "Based on the provided text, generate exactly " + count + " flashcards. " +
@@ -147,7 +147,7 @@ public class AiService {
                 }
             }
             jsonResponse = jsonResponse.trim();
-            return objectMapper.readValue(jsonResponse, new TypeReference<List<FlashcardSuggestionDTO>>() {});
+            return objectMapper.readValue(jsonResponse, new TypeReference<List<FlashcardDTO>>() {});
         } catch (IOException e) {
             System.err.println("Error parsing flashcard suggestions from AI: " + e.getMessage() + "\nResponse was: " + jsonResponse);
             //TODO: Jogar alguma exceção aqui
