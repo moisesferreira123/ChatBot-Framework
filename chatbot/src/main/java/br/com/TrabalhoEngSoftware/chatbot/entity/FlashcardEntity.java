@@ -40,7 +40,7 @@ public abstract class FlashcardEntity {
 	@Column
 	protected LocalDateTime lastReviewedAt;
 	
-	@Column(nullable = false)
+	@Column
 	protected LocalDateTime nextReview;
 	
 	// Quantidade de vezes que o card foi revisado com sucesso (sequencialmente).
@@ -159,7 +159,7 @@ public abstract class FlashcardEntity {
 		this.deckEntity = deckEntity;
 	}
 
-	public boolean isSpacedRepetition() {
+	public boolean isSupportsSpacedRepetition() {
 		return supportsSpacedRepetition;
 	}
 

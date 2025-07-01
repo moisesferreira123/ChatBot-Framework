@@ -4,21 +4,33 @@ import java.time.LocalDateTime;
 
 import org.springframework.beans.BeanUtils;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import br.com.TrabalhoEngSoftware.chatbot.entity.DeckEntity;
 import br.com.TrabalhoEngSoftware.chatbot.entity.FlashcardEntity;
+import br.com.TrabalhoEngSoftware.chatbot.enums.FlashcardType;
 
-public class FlashcardDTO {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = StandardFlashcardDTO.class, name = "STANDARD"),
+    @JsonSubTypes.Type(value = MultipleChoiceFlashcardDTO.class, name = "MULTIPLE_CHOICE"),
+		@JsonSubTypes.Type(value = MultipleAnswersFlashcardDTO.class, name = "MULTIPLE_ANSWERS"),
+		@JsonSubTypes.Type(value = TrueFalseFlashcardDTO.class, name = "TRUE_FALSE"),
+		@JsonSubTypes.Type(value = DiscursiveFlashcardDTO.class, name = "DISCURSIVE")
+})
+public abstract class FlashcardDTO {
 	
-	private Long id;
-	private String front;
-	private String back;
-	private LocalDateTime createdAt;
-	private LocalDateTime lastReviewedAt;
-	private LocalDateTime nextReview;
-	private int repetition;
-	private double easeFactor;
-	private int interval;
-	private DeckEntity deckEntity;
+	protected Long id;
+	protected LocalDateTime createdAt;
+	protected LocalDateTime lastReviewedAt;
+	protected LocalDateTime nextReview;
+	protected int repetition;
+	protected double easeFactor;
+	protected int interval;
+	protected DeckEntity deckEntity;
+	protected boolean supportsSpacedRepetition;
+	protected FlashcardType type;
 	
 	public FlashcardDTO(FlashcardEntity flashcard) {
 		BeanUtils.copyProperties(flashcard, this);
@@ -34,22 +46,6 @@ public class FlashcardDTO {
 	
 	public void setId(Long id) {
 		this.id = id;
-	}
-	
-	public String getFront() {
-		return front;
-	}
-	
-	public void setFront(String front) {
-		this.front = front;
-	}
-	
-	public String getBack() {
-		return back;
-	}
-	
-	public void setBack(String back) {
-		this.back = back;
 	}
 	
 	public LocalDateTime getCreatedAt() {
@@ -104,7 +100,23 @@ public class FlashcardDTO {
 		return deckEntity;
 	}
 	
-	public void setFlashcardEntity(DeckEntity deckEntity) {
+	public void setDeckEntity(DeckEntity deckEntity) {
 		this.deckEntity = deckEntity;
 	}
+
+	public boolean isSupportsSpacedRepetition() {
+		return supportsSpacedRepetition;
+	}
+
+	public void setSupportsSpacedRepetition(boolean supportsSpacedRepetition) {
+		this.supportsSpacedRepetition = supportsSpacedRepetition;
+	}
+
+	public FlashcardType getType() {
+		return type;
+	}
+
+	public void setType(FlashcardType type) {
+		this.type = type;
+	}	
 }

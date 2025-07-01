@@ -3,6 +3,7 @@ package br.com.TrabalhoEngSoftware.chatbot.dto;
 import java.time.LocalDateTime;
 
 import br.com.TrabalhoEngSoftware.chatbot.entity.FlashcardEntity;
+import br.com.TrabalhoEngSoftware.chatbot.entity.StandardFlashcard;
 
 public class FlashcardSummaryDTO {
 
@@ -16,7 +17,7 @@ public class FlashcardSummaryDTO {
 	private double easeFactor;
 	private int interval;
 
-  public FlashcardSummaryDTO(FlashcardEntity flashcard) {
+  public FlashcardSummaryDTO(StandardFlashcard flashcard) {
     this.id = flashcard.getId();
     this.front = flashcard.getFront();
     this.back = flashcard.getBack();

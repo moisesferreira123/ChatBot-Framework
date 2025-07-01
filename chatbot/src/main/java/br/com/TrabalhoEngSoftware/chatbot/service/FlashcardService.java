@@ -56,6 +56,7 @@ public class FlashcardService {
       throw new InvalidObjectDataException("Flashcard front can't be empty");
     }
     
+    // TODO: Mudar para a nossa exceção
     DeckEntity deck = deckRepository.findById(deckId).orElseThrow(() -> new RuntimeException("Flashcard deck not found"));
     flashcard.setFront(flashcardDTO.getFront());
     flashcard.setBack(flashcardDTO.getBack());
@@ -131,14 +132,14 @@ public class FlashcardService {
   }
 
   @Transactional
-  public FlashcardSummaryDTO getFlashcardById(Long flashcardId, Long userId) {
+  public FlashcardDTO getFlashcardById(Long flashcardId, Long userId) {
     FlashcardEntity flashcard = flashcardRepository.findById(flashcardId).orElseThrow(() -> new ObjectNotFoundException("Flashcard not found"));
     
     if(!flashcard.getDeckEntity().getUserEntity().getId().equals(userId)) {
       throw new UnauthorizedObjectAccessException("Unauthorized to get this flashcard");
     }
 
-    return new FlashcardSummaryDTO(flashcard);
+    return new FlashcardDTO(flashcard);
   }
 
   public Optional<FlashcardSummaryDTO> getNextDueFlashcardByDeckId(Long deckId, Long userId) {
