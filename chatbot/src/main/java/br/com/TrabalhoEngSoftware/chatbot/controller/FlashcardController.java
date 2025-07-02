@@ -20,10 +20,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import br.com.TrabalhoEngSoftware.chatbot.dto.FlashcardSuggestionDTO;
 import br.com.TrabalhoEngSoftware.chatbot.dto.NoteDTO;
+import br.com.TrabalhoEngSoftware.chatbot.dto.UserAnswerDTO;
 import br.com.TrabalhoEngSoftware.chatbot.dto.FlashcardDTO;
-import br.com.TrabalhoEngSoftware.chatbot.dto.FlashcardSummaryDTO;
 import br.com.TrabalhoEngSoftware.chatbot.entity.UserEntity;
 import br.com.TrabalhoEngSoftware.chatbot.service.FlashcardService;
 import br.com.TrabalhoEngSoftware.chatbot.service.AiService;
@@ -62,7 +61,7 @@ public class FlashcardController {
   }
 
   @GetMapping
-  public Page<FlashcardSummaryDTO> listFlashcards(
+  public Page<FlashcardDTO> listFlashcards(
     @RequestParam(required = false) String word,
     @RequestParam(required = false) String flashcardFilter,
     @RequestParam(defaultValue = "lastReviewedAtDesc") String sortType,
@@ -82,10 +81,10 @@ public class FlashcardController {
   @PutMapping("/{flashcardId}")
   public void updateFlashcard(
       @PathVariable Long flashcardId,
-      @RequestBody FlashcardSummaryDTO flashcardSummaryDTO,
+      @RequestBody FlashcardDTO flashcardDTO,
       Authentication authentication) {
     UserEntity user = (UserEntity) authentication.getPrincipal();
-    flashcardService.updateFlashcard(flashcardId, flashcardSummaryDTO, user.getId());
+    flashcardService.updateFlashcard(flashcardId, flashcardDTO, user.getId());
   }
 
   @DeleteMapping("/{flashcardId}")
@@ -95,71 +94,19 @@ public class FlashcardController {
   }
 
   @GetMapping("/{flashcardId}")
-  public FlashcardSummaryDTO getFlashcardById(@PathVariable Long flashcardId, Authentication authentication) {
+  public FlashcardDTO getFlashcardById(@PathVariable Long flashcardId, Authentication authentication) {
     UserEntity user = (UserEntity) authentication.getPrincipal();
     return flashcardService.getFlashcardById(flashcardId, user.getId());
   }
 
-  @GetMapping("/next-due-flashcard-by-deck-id/{deckId}")
-  public ResponseEntity<FlashcardSummaryDTO> getNextDueFlashcardByDeckId(@PathVariable Long deckId, Authentication authentication) {
+  @PutMapping("/evaluate-answer/{flashcardId}")
+  public void evaluateAnswer(@PathVariable Long flashcardId, @RequestBody UserAnswerDTO answer, Authentication authentication) {
     UserEntity user = (UserEntity) authentication.getPrincipal();
-    return flashcardService.getNextDueFlashcardByDeckId(deckId, user.getId())
-           .map(ResponseEntity::ok)
-           .orElseGet(() -> ResponseEntity.noContent().build());
-  }
-
-  @PutMapping("/apply-review-result/{flashcardId}/{answer}")
-  public void applyReviewResult(@PathVariable Long flashcardId, @PathVariable int answer, Authentication authentication) {
-    UserEntity user = (UserEntity) authentication.getPrincipal();
-    flashcardService.applyReviewResult(flashcardId, answer, user.getId());
-  }
-
-  @GetMapping("/get-count-new-flashcards/{deckId}")
-  public long getCountNewFlashcards(@PathVariable Long deckId, Authentication authentication) {
-    UserEntity user = (UserEntity) authentication.getPrincipal();
-    return flashcardService.getCountNewFlashcards(deckId, user.getId());
-  }
-
-  @GetMapping("/get-count-learning-flashcards/{deckId}")
-  public long getCountLearningFlashcards(@PathVariable Long deckId, Authentication authentication) {
-    UserEntity user = (UserEntity) authentication.getPrincipal();
-    return flashcardService.getCountLearningFlashcards(deckId, user.getId());
-  }
-
-  @GetMapping("/get-count-review-flashcards/{deckId}")
-  public long getCountReviewFlashcards(@PathVariable Long deckId, Authentication authentication) {
-    UserEntity user = (UserEntity) authentication.getPrincipal();
-    return flashcardService.getCountReviewFlashcards(deckId, user.getId());
-  }
-
-  @GetMapping("/next-due-flashcard")
-  public ResponseEntity<FlashcardSummaryDTO> getNextDueFlashcard(Authentication authentication) {
-    UserEntity user = (UserEntity) authentication.getPrincipal();
-    return flashcardService.getNextDueFlashcard(user.getId())
-           .map(ResponseEntity::ok)
-           .orElseGet(() -> ResponseEntity.noContent().build());
-  }
-
-  @GetMapping("/get-count-all-new-flashcards")
-  public long getCountAllNewFlashcards(Authentication authentication) {
-    UserEntity user = (UserEntity) authentication.getPrincipal();
-    return flashcardService.getCountAllNewFlashcards(user.getId());
-  }
-
-  @GetMapping("/get-count-all-learning-flashcards")
-  public long getCountAllLearningFlashcards(Authentication authentication) {
-    UserEntity user = (UserEntity) authentication.getPrincipal();
-    return flashcardService.getCountAllLearningFlashcards(user.getId());
-  }
-
-  @GetMapping("/get-count-all-review-flashcards")
-  public long getCountAllReviewFlashcards(Authentication authentication) {
-    UserEntity user = (UserEntity) authentication.getPrincipal();
-    return flashcardService.getCountAllReviewFlashcards(user.getId());
+    flashcardService.evaluateAnswer(flashcardId, answer, user.getId());
   }
 
   @PostMapping("/generate-from-note/{noteId}/deck/{deckId}")
-  public ResponseEntity<List<FlashcardSummaryDTO>> generateFlashcardsFromNote(
+  public ResponseEntity<List<FlashcardDTO>> generateFlashcardsFromNote(
       @PathVariable Long noteId,
       @PathVariable Long deckId,
       @RequestBody(required = false) GenerateFlashcardsRequest request,
@@ -175,14 +122,14 @@ public class FlashcardController {
     int count = (request != null) ? request.getCount() : 5;
     String provider = (request != null) ? request.getProvider() : "openAiChatClient";
 
-    List<FlashcardSuggestionDTO> suggestions = aiService.generateFlashcardSuggestions(note.getContent(),
+    List<FlashcardDTO> suggestions = aiService.generateFlashcardSuggestions(note.getContent(),
         currentUser.getId(), count, provider);
 
     if (suggestions.isEmpty()) {
       return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new ArrayList<>());
     }
 
-    List<FlashcardSummaryDTO> createdFlashcards = flashcardService.createFlashcardsFromSuggestions(suggestions, deckId,
+    List<FlashcardDTO> createdFlashcards = flashcardService.createFlashcardsFromSuggestions(suggestions, deckId,
         currentUser.getId());
     return ResponseEntity.status(HttpStatus.CREATED).body(createdFlashcards);
   }

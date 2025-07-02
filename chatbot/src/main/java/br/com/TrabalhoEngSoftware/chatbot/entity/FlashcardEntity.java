@@ -8,12 +8,9 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import br.com.TrabalhoEngSoftware.chatbot.dto.FlashcardDTO;
-import br.com.TrabalhoEngSoftware.chatbot.enums.FlashcardType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -39,32 +36,9 @@ public abstract class FlashcardEntity {
 	
 	@Column
 	protected LocalDateTime lastReviewedAt;
-	
-	@Column
-	protected LocalDateTime nextReview;
-	
-	// Quantidade de vezes que o card foi revisado com sucesso (sequencialmente).
-	// Inicia em zero.
-	@Column(nullable = false)
-	protected int repetition;
-	
-	// Grau de facilidade do flashcard.
-	// Começa com 2.5 e muda conforme o desempenho do usuário
-	@Column(nullable = false)
-	protected double easeFactor;
-	
-	//Quantidade de dias até a próxima revisão.
-	//Começa em 1 e cresce conforme o algoritmo.
-	// interval *= easeFactor;
-	@Column(nullable = false)
-	protected int interval;
 
 	@Column(nullable = false)
-	protected boolean supportsSpacedRepetition;
-
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	protected FlashcardType type;
+	protected String type;
 	
 	@ManyToOne
 	@JoinColumn(name="deck_id")
@@ -119,38 +93,6 @@ public abstract class FlashcardEntity {
 		this.lastReviewedAt = lastReviewedAt;
 	}
 
-	public LocalDateTime getNextReview() {
-		return nextReview;
-	}
-
-	public void setNextReview(LocalDateTime nextReview) {
-		this.nextReview = nextReview;
-	}
-
-	public int getRepetition() {
-		return repetition;
-	}
-
-	public void setRepetition(int repetition) {
-		this.repetition = repetition;
-	}
-
-	public double getEaseFactor() {
-		return easeFactor;
-	}
-
-	public void setEaseFactor(double easeFactor) {
-		this.easeFactor = easeFactor;
-	}
-
-	public int getInterval() {
-		return interval;
-	}
-
-	public void setInterval(int interval) {
-		this.interval = interval;
-	}
-
 	public DeckEntity getDeckEntity() {
 		return deckEntity;
 	}
@@ -159,21 +101,11 @@ public abstract class FlashcardEntity {
 		this.deckEntity = deckEntity;
 	}
 
-	public boolean isSupportsSpacedRepetition() {
-		return supportsSpacedRepetition;
-	}
-
-	public void setSupportsSpacedRepetition(boolean supportsSpacedRepetition) {
-		this.supportsSpacedRepetition = supportsSpacedRepetition;
-	}
-
-	public FlashcardType getType() {
+	public String getType() {
 		return type;
 	}
 
-	public void setType(FlashcardType type) {
+	public void setType(String type) {
 		this.type = type;
 	}
-
-	
 }

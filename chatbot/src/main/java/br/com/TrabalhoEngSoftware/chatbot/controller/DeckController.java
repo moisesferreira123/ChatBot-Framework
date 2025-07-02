@@ -65,16 +65,4 @@ public class DeckController {
     UserEntity user = (UserEntity) authentication.getPrincipal();
     return deckService.getFlashcardsTotal(deckId, user.getId());
   }
-
-  @GetMapping("/get-due-flashcards-total/{deckId}")
-  public long getDueFlashcardsTotal(@PathVariable Long deckId, Authentication authentication) {
-    UserEntity user = (UserEntity) authentication.getPrincipal();
-    return deckService.getDueFlashcardsTotal(deckId, user.getId());
-  }
-
-  @GetMapping("/get-mastery-level/{deckId}")
-  public double getMasteryLevel(@PathVariable Long deckId, Authentication authentication) {
-    UserEntity user = (UserEntity) authentication.getPrincipal();
-    return deckService.getMasteryLevel(deckId, user.getId());
-  }
 }

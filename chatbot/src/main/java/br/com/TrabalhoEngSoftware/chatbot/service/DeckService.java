@@ -1,8 +1,5 @@
 package br.com.TrabalhoEngSoftware.chatbot.service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -115,34 +112,4 @@ public class DeckService {
     long flashcardsTotal = deck.getFlashcards().size();
     return flashcardsTotal;
   }
-
-  public long getDueFlashcardsTotal(Long deckId, Long userId) {
-    DeckEntity deck = deckRepository.findById(deckId).orElseThrow(() -> new ObjectNotFoundException("Deck not found"));
-    if(!deck.getUserEntity().getId().equals(userId)) {
-			throw new UnauthorizedObjectAccessException("Unauthorized to see due flashcards total this deck");
-		}
-    LocalDateTime tomorrow = LocalDate.now().plusDays(1).atStartOfDay();
-    long dueFlashcardsTotal = deck.getFlashcards().stream()
-                                  .filter(flashcard -> flashcard.getNextReview().isBefore(tomorrow))
-                                  .count();
-    return dueFlashcardsTotal;
-  }
-
-  public double getMasteryLevel(Long deckId, Long userId) {
-    DeckEntity deck = deckRepository.findById(deckId).orElseThrow(() -> new ObjectNotFoundException("Deck not found"));
-    if(!deck.getUserEntity().getId().equals(userId)) {
-			throw new UnauthorizedObjectAccessException("Unauthorized to see mastery level this deck");
-		}
-
-    int repetitionMastery = 4;
-    long dominatedFlashcards = deck.getFlashcards().stream()
-                            .filter(flashcard -> flashcard.getRepetition() >= repetitionMastery)
-                            .count();
-
-    int flashcardsTotal = deck.getFlashcards().size();
-    if (flashcardsTotal == 0) return 0.0; 
-
-    double masteryLevel = (double) dominatedFlashcards/flashcardsTotal;
-    return masteryLevel;
-  } 
 }

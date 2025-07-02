@@ -1,12 +1,13 @@
 package br.com.TrabalhoEngSoftware.chatbot.service;
 
-import br.com.TrabalhoEngSoftware.chatbot.dto.FlashcardSuggestionDTO;
+import br.com.TrabalhoEngSoftware.chatbot.dto.FlashcardDTO;
 import br.com.TrabalhoEngSoftware.chatbot.service.provider.AiProvider;
 import br.com.TrabalhoEngSoftware.chatbot.service.prompt.PromptBuilder;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
+
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -36,7 +37,7 @@ public class AiService {
         return aiProvider.getCompletion(prompt, chatClient);
     }
 
-    public List<FlashcardSuggestionDTO> generateFlashcardSuggestions(String noteContent, Long userId, int count, String provider) {
+    public List<FlashcardDTO> generateFlashcardSuggestions(String noteContent, Long userId, int count, String provider) {
         ChatClient chatClient = chatClients.get(provider);
         Prompt prompt = promptBuilderProvider.getObject()
                 .forFlashcardGeneration(noteContent, count)
