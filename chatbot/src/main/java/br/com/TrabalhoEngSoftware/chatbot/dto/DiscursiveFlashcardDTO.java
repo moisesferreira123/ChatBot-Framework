@@ -7,12 +7,7 @@ public class DiscursiveFlashcardDTO extends FlashcardDTO {
 	private String userAnswer;
 	private String exampleCorrectAnswer;
 
-  public DiscursiveFlashcardDTO(FlashcardEntity flashcardEntity, String question, String userAnswer, String exampleCorrectAnswer) {
-    super(flashcardEntity);
-    this.question = question;
-    this.userAnswer = userAnswer;
-    this.exampleCorrectAnswer = exampleCorrectAnswer;
-  }
+  
 
   public DiscursiveFlashcardDTO() {
     super();

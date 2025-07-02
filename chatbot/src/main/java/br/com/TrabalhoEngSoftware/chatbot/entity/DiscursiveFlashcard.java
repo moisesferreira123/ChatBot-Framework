@@ -7,7 +7,7 @@ import jakarta.persistence.Entity;
 
 @Entity
 @DiscriminatorValue("DISCURSIVE")
-public class DiscursiveFLashcard extends FlashcardEntity{
+public class DiscursiveFlashcard extends FlashcardEntity{
   @Column(nullable = false)
 	private String question;
 

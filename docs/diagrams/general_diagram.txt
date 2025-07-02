@@ -1,0 +1,323 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam arrowColor Black
+
+' Camada Entity
+package "Entity" {
+  class DeckEntity {
+    - id: Long
+    - title: String
+    - topic: String
+    - createdAt: LocalDateTime
+    - lastReviewedAt: LocalDateTime
+    - flashcards: List<FlashcardEntity>
+    - user: UserEntity
+    - supportsSpacedRepetition: boolean
+  }
+  class FlashcardEntity {
+    - id: Long
+    - createdAt: LocalDateTime
+    - lastReviewedAt: LocalDateTime
+    - nextReview: LocalDateTime
+    - repetition: int
+    - easeFactor: double
+    - interval: int
+    - type: FlashcardType
+    - deck: DeckEntity
+    - supportsSpacedRepetition: boolean
+  }
+  class StandardFlashcard {
+    - front: String
+    - back: String
+  }
+  class MultipleChoiceFlashcard {
+    - question: String
+    - options: List<String>
+    - correctOptionIndex: int
+  }
+  class MultipleAnswersFlashcard {
+    - question: String
+    - options: List<String>
+    - correctOptionIndexes: List<Integer>
+  }
+  class TrueFalseFlashcard {
+    - statement: String
+    - isTrue: boolean
+  }
+  class DiscursiveFlashcard {
+   - question: String
+   - userAnswer: String
+   - exampleCorrectAnswer: String
+  }
+  class NoteEntity {
+    - id: Long
+    - title: String
+    - subtitle: String
+    - content: String
+    - createdAt: LocalDateTime
+    - updatedAt: LocalDateTime
+    - user: UserEntity
+    - sources: List<SourceEntity>
+    + addSource()
+    + removeSource()
+  }
+  class SourceEntity {
+    - id: Long
+    - fileName: String
+    - filePath: String
+    - createdAt: LocalDateTime
+    - note: NoteEntity
+    - extractedText: String
+  }
+  class UserEntity {
+    - id: Long
+    - fullName: String
+    - username: String
+    - email: String
+    - password: String
+  }
+}
+
+' Camada DTO
+package "DTO" {
+  class DeckDTO
+  class FlashcardDTO
+  class NoteDTO
+  class UserDTO
+  class SourceDTO
+}
+
+' Camada Repository
+package "Repository" {
+  interface DeckRepository {
+    + deleteByUserId()
+  }
+  interface FlashcardRepository {
+    + findNextDueFlashcardByDeckId()
+    + countNewFLashcards()
+    + countLearningFlashcards()
+    + countReviewFlashcards()
+    + findNextDueFlashcard()
+    + countAllNewFLashcards()
+    + countAllLearningFlashcards()
+    + countAllReviewFlashcards()
+  }
+  interface NoteRepository {
+    + deleteByUserId()
+  }
+  interface UserRepository {
+    + findByUsername()
+  }
+  interface SourceRepository {
+    + findByNoteId()
+    + findByIdAndNoteId()
+  }
+}
+
+' Camada Service
+package "Service" {
+  class AiService {
+    - aiProvider: AiProvider
+    - promptBuilder: PromptBuilder
+    + getCompletion()
+    + generateFlashcardSuggestions()
+  }
+  class AuthorizationService {
+    - userRepository: UserRepository
+    + loadUserByUsername()
+  }
+  class DeckService {
+    - deckRepository: DeckRepository
+    - topicService: TopicService
+    + createDeck()
+    + listDecks()
+    + updateDeck()
+    + deleteDeck()
+    + getFlashcardsTotal()
+    + getDueFlashcardsTotal()
+    + getMasteryLevel()
+  }
+  class FlashcardService {
+    - flashcardRepository: FlashcardRepository
+    - deckRepository: DeckRepository
+    + createFlashcard()
+    + listFlashcards()
+    + updateFlashcard()
+    + deleteFlashcard()
+    + getFlashcardById()
+    + getNextDueFlashcardByDeckId()
+    + applyReviewResult()
+    + createFlashcardsFromSuggestions()
+    + getCountNewFlashcards()
+    + getCountLearningFlashcards()
+    + getCountReviewFlashcards()
+    + getNextDueFlashcard()
+    + getCountAllNewFlashcards()
+    + getCountAllLearningFlashcards()
+    + getCountAllReviewFlashcards()
+    # calculateEaseFactor()
+  }
+  class NoteService {
+    - noteRepository: NoteRepository
+    + createNote()
+    + listNotes()
+    + updateNote()
+    + deleteNote()
+    + getNoteById()
+  }
+  class SourceService {
+    - sourceRepository: SourceRepository
+    - noteRepository: NoteRepository
+    - uploadDir: String
+    + uploadSource()
+    + getSourcesByNoteId()
+    + deleteSource()
+  }
+  class TopicService {
+    - topics: Map<String, Long>
+    + addTopic()
+    + updateTopic()
+    + removeTopic()
+    + getAllTopics()
+    # capitalizeFirstLetter()
+    # exists()
+  }
+  class UserService {
+    - userRepository: UserRepository
+    - noteRepository: NoteRepository
+    - deckRepository: DeckRepository
+    + getUserById()
+    + updateUserPersonalInformations()
+    + updateUserPassword()
+    + deleteUser()
+  }
+}
+
+' Camada Controller
+package "Controller" {
+  class AiController {
+    - aiService: AiService
+    + complete()
+  }
+  class AuthenticationController {
+    - authenticationManager: AuthenticationManager
+    - userRepository: UserRepository
+    - tokenService: TokenService
+    + login()
+    + register()
+  }
+  class DeckController {
+    - deckService: DeckService
+    + createDeck()
+    + listDecks()
+    + updateDeck()
+    + deleteDeck()
+    + getFlashcardsTotal()
+    + getDueFlashcardsTotal()
+    + getMasteryLevel()
+  }
+  class FlashcardController {
+    - flashcardService: FlashcardService
+    - aiService: AiService
+    - noteService: NoteService
+    + createFlashcard()
+    + listFlashcards()
+    + updateFlashcard()
+    + deleteFlashcard()
+    + getFlashcardById()
+    + getNextDueFlashcardByDeckId()
+    + applyReviewResult()
+    + getCountNewFlashcards()
+    + getCountLearningFlashcards()
+    + getCountReviewFlashcards()
+    + getNextDueFlashcard()
+    + getCountAllNewFlashcards()
+    + getCountAllLearningFlashcards()
+    + getCountAllReviewFlashcards()
+    + generateFlashcardsFromNote()
+  }
+  class NoteController {
+    - noteService: NoteService
+    + createNote()
+    + listNotes()
+    + updateNote()
+    + deleteNote()
+    + getNoteById()
+  }
+  class SourceController {
+    - sourceService: SourceService
+    + uploadSource()
+    + getSourcesByNoteId()
+    + deleteSource()
+  }
+  class TopicController {
+    - topicService: TopicService
+    + getAllTopics()
+  }
+  class UserController {
+    - userService: UserService
+    + getUserById()
+    + updateUserPersonalInformations()
+    + updateUserPassword()
+    + deleteUser()
+  }
+}
+
+
+' Relacionamentos entre as camadas
+FlashcardEntity <|-- StandardFlashcard
+FlashcardEntity <|-- MultipleChoiceFlashcard
+FlashcardEntity <|-- MultipleAnswersFlashcard
+FlashcardEntity <|-- TrueFalseFlashcard
+FlashcardEntity <|-- DiscursiveFlashcard
+
+AiController --> AiService
+AuthenticationController --> UserRepository
+DeckController --> DeckService
+FlashcardController --> FlashcardService
+FlashcardController --> AiService
+FlashcardController --> NoteService
+NoteController --> NoteService
+SourceController --> SourceService
+UserController --> UserService
+
+AiService --> AiProvider
+AiService --> PromptBuilder
+AuthorizationService --> UserRepository
+DeckService --> DeckRepository
+FlashcardService --> FlashcardRepository
+FlashcardService --> DeckRepository
+NoteService --> NoteRepository
+SourceService --> SourceRepository
+SourceService --> NoteRepository
+UserService --> UserRepository
+UserService --> NoteRepository
+UserService --> DeckRepository
+
+DeckService ..> DeckDTO
+FlashcardService ..> FlashcardDTO
+NoteService ..> NoteDTO
+SourceService ..> SourceDTO
+UserService ..> UserDTO
+
+DeckController ..> DeckDTO
+FlashcardController ..> FlashcardDTO
+NoteController ..> NoteDTO
+SourceController ..> SourceDTO
+UserController ..> UserDTO
+
+DeckDTO ..> DeckEntity
+FlashcardDTO ..> FlashcardEntity
+NoteDTO ..> NoteEntity
+SourceDTO ..> SourceEntity
+UserDTO ..> UserEntity
+
+DeckEntity --> FlashcardEntity
+DeckEntity --> UserEntity
+NoteEntity --> UserEntity
+NoteEntity --> SourceEntity
+
+DeckService --> TopicService
+TopicController --> TopicService
+@enduml

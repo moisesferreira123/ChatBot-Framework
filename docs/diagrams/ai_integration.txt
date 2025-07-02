@@ -1,0 +1,63 @@
+@startuml
+' https://plantuml.com/class-diagram
+
+package "Controller Layer" {
+    class AiController {
+        - aiService: AiService
+        + complete(AiCompletionRequest, Authentication): String
+        + completeStream(AiCompletionRequest, Authentication): Flux<String>
+    }
+}
+
+package "Service Layer" {
+    package "AI" {
+        class AiService {
+            - aiProvider: AiProvider
+            - promptBuilder: PromptBuilder
+            + getCompletion(String, String, Long, List<Long>, Long): String
+            + generateFlashcardSuggestions(String, Long, int): List<FlashcardSuggestionDTO>
+            + getStreamCompletion(String, String, Long, List<Long>, Long): Flux<String>
+        }
+    }
+
+    package "Prompt" {
+        class PromptBuilder {
+            - noteRepository: NoteRepository
+            - sourceRepository: SourceRepository
+            + buildPrompt(String, String, Long, List<Long>, Long): Prompt
+            + buildFlashcardPrompt(String, int): Prompt
+        }
+    }
+
+    package "Provider" {
+        interface AiProvider {
+            + getCompletion(Prompt): String
+            + getJsonCompletion(Prompt, Class<T>): <T> T
+            + getStreamCompletion(Prompt): Flux<String>
+        }
+
+        class SpringAiProvider implements AiProvider {
+            - chatClient: ChatClient
+            + getCompletion(Prompt): String
+            + getJsonCompletion(Prompt, Class<T>): <T> T
+            + getStreamCompletion(Prompt): Flux<String>
+        }
+    }
+}
+
+package "Repository Layer" {
+    interface NoteRepository {
+    }
+    interface SourceRepository {
+    }
+}
+
+
+AiController --> AiService
+AiService --> AiProvider
+AiService --> PromptBuilder
+PromptBuilder --> NoteRepository
+PromptBuilder --> SourceRepository
+SpringAiProvider --> AiProvider
+
+@enduml
