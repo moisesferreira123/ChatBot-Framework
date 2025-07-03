@@ -6,14 +6,20 @@ import br.com.TrabalhoEngSoftware.chatbot.repository.SourceRepository;
 
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.Media;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 
 
@@ -33,7 +39,7 @@ public class PromptBuilder {
 
     private List<Message> promptMessages;
     private String systemMessageContent;
-    private StringBuilder contextBuilder = new StringBuilder();
+    private List<UserMessage> extraContext;
     private ChatOptions chatOptions;
     private boolean hasUserMessage = false;
 
@@ -70,6 +76,7 @@ public class PromptBuilder {
 
     public PromptBuilder withNoteContext(Long noteId, Long userId) {
         if (noteId != null) {
+            StringBuilder contextBuilder = new StringBuilder();
             noteRepository.findById(noteId).ifPresent(note -> {
                 if (note.getUserEntity().getId().equals(userId)) {
                     contextBuilder.append("## Context from Note (ID: ").append(noteId).append("):\n");
@@ -88,22 +95,19 @@ public class PromptBuilder {
 
     public PromptBuilder withSourceContext(List<Long> sourceIds, Long noteId, Long userId) {
         if (sourceIds != null && !sourceIds.isEmpty()) {
+            StringBuilder contextBuilder = new StringBuilder();
             contextBuilder.append("## Context from Uploaded Sources:\n");
             List<SourceEntity> sources = sourceRepository.findAllById(sourceIds);
             for (SourceEntity source : sources) {
                 if (source.getNoteEntity().getUserEntity().getId().equals(userId)) {
                     if (noteId == null || source.getNoteEntity().getId().equals(noteId)) {
-                        if (source.getExtractedText() != null && !source.getExtractedText().isEmpty()) {
-                            contextBuilder.append("### Source (File: ").append(source.getFileName()).append("):\n");
-                            String extractedContent = source.getExtractedText();
-                            contextBuilder.append(extractedContent.substring(0, Math.min(extractedContent.length(), 4000)));
-                            if (extractedContent.length() > 4000) {
-                                contextBuilder.append("...\n[Content Truncated]");
-                            }
-                            contextBuilder.append("\n\n");
-                        } else {
-                            contextBuilder.append("### Source (File: ").append(source.getFileName()).append("):\nText content not available or empty.\n\n");
-                        }
+                        contextBuilder.append("### Source (File: ").append(source.getFileName()).append("):\n");
+                        //TODO: Utilizar RAG para arquivos grandes
+                        byte[] fileData = new ClassPathResource(source.getFilePath()).getContentAsByteArray();
+                        String mimeTypeString = Files.probeContentType(Paths.get(source.getFilePath()));
+                        MimeType mimeType = MimeTypeUtils.parseMimeType(mimeTypeString);
+                        //FIXME: Esse construtor de Media é deprecado, ver docs de novas versões para substituir
+                        extraContext.add(new UserMessage(contextBuilder.toString(), new Media(mimeType, fileData)));
                     }
                 } else {
                     System.err.println("User " + userId + " attempted to access unauthorized source " + source.getId());
@@ -127,15 +131,17 @@ public class PromptBuilder {
 
     public Prompt build() {
         String effectiveSystemPrompt = systemMessageContent;
-        if (contextBuilder.length() > 0) {
-            effectiveSystemPrompt = "## Provided Context:\n" + contextBuilder.toString() + "\n## General Instructions for AI:\n" + effectiveSystemPrompt;
-        }
-
+        
         if (effectiveSystemPrompt != null && !effectiveSystemPrompt.trim().isEmpty()) {
             promptMessages.add(new SystemMessage(effectiveSystemPrompt));
         }
         if (!hasUserMessage) {
             promptMessages.add(new UserMessage("Please provide a response based on the context."));
+        }
+        if (!extraContext.isEmpty()) { 
+            //TODO: Experimentar diferentes ordens de mensagens, colocar o contexto adicional no final pode fazer com que a LLM acabe ignorando o input do próprio usuário (que ficaria no meio)
+            //OBS: Talvez também seja melhor deixar antes das mensagens do usuário para permitir caching do prompt.
+            promptMessages.addAll(extraContext);   
         }
 
         if (chatOptions != null) {

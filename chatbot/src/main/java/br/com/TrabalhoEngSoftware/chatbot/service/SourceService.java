@@ -10,15 +10,12 @@ import br.com.TrabalhoEngSoftware.chatbot.exception.StorageInitializationExcepti
 import br.com.TrabalhoEngSoftware.chatbot.exception.UnauthorizedObjectAccessException;
 import br.com.TrabalhoEngSoftware.chatbot.repository.NoteRepository;
 import br.com.TrabalhoEngSoftware.chatbot.repository.SourceRepository;
-import org.apache.tika.Tika;
-import org.apache.tika.exception.TikaException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,7 +33,6 @@ public class SourceService {
 
     // TODO: Configurar o diretório de upload de forma mais robusta (ex: usando propriedades do Spring)
     private final String uploadDir = "./uploads"; // FIXME: Temporário, deve ser configurado corretamente
-    private final Tika tika = new Tika(); // Inicializar instância do Tika
 
     public SourceService() {
         // Criar o diretório de upload se não existir
@@ -65,19 +61,10 @@ public class SourceService {
 
             Files.copy(file.getInputStream(), filePath);
 
-            String extractedTextContent = "";
-            try (InputStream inputStream = file.getInputStream()) {
-                extractedTextContent = tika.parseToString(inputStream);
-            } catch (IOException | TikaException e) {
-                System.err.println("Error extracting text from file " + originalFileName + ": " + e.getMessage());
-                //Segue com texto vazio (sem jogar exceptions)
-            }
-
             SourceEntity source = new SourceEntity();
             source.setFileName(originalFileName);
             source.setFilePath(filePath.toString());
             source.setNoteEntity(note);
-            source.setExtractedText(extractedTextContent);
 
             SourceEntity savedSource = sourceRepository.save(source);
 
