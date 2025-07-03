@@ -1,46 +1,50 @@
 package br.com.TrabalhoEngSoftware.chatbot.specification;
 
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import br.com.TrabalhoEngSoftware.chatbot.entity.NoteEntity;
+import jakarta.persistence.criteria.Predicate;
 
-public class NoteSpecificationBuilder {
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+@ConditionalOnMissingBean(FlashcardSpecificationBuilder.class)
+public class NoteSpecificationBuilder extends SpecificationBuilder<NoteEntity> {
+  private String title;
 	
-	private Specification<NoteEntity> specification;
+  @SuppressWarnings("null")
+	public NoteSpecificationBuilder(String title) {
+    super();
+    this.title = title;
+		
+    buildSpecification("filterByTitle", (root, query, criteriaBuilder)-> {
+			Predicate titlePredicate = criteriaBuilder.conjunction();
+			if(this.title != null && !this.title.isEmpty()) {
+				titlePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), "%" + this.title.toLowerCase() + "%");
+			}
+			return criteriaBuilder.and(titlePredicate);
+		});
 
-    public NoteSpecificationBuilder() {
-        this.specification = Specification.where(null);  // Começa com uma especificação vazia
-    }
+    buildSpecification("createdAtDesc", (root, query, criteriaBuilder) -> {
+			query.orderBy(criteriaBuilder.desc(root.get("createdAt")));
+			return null;
+		});
 
-    public NoteSpecificationBuilder filterByTitle(String title) {
-        this.specification = this.specification.and(NoteSpecification.filterByTitle(title));
-        return this;
-    }
+    buildSpecification("createdAtAsc", (root, query, criteriaBuilder) -> {
+			query.orderBy(criteriaBuilder.asc(root.get("createdAt")));
+			return null;
+		});
 
-    public NoteSpecificationBuilder sortByCreatedAtDesc() {
-        this.specification = this.specification.and(NoteSpecification.sortByCreatedAtDesc());
-        return this;
-    }
-
-    public NoteSpecificationBuilder sortByCreatedAtAsc() {
-        this.specification = this.specification.and(NoteSpecification.sortByCreatedAtAsc());
-        return this;
-    }
-
-    public NoteSpecificationBuilder sortByUpdatedAtDesc() {
-        this.specification = this.specification.and(NoteSpecification.sortedByUpdatedAtDesc());
-        return this;
-    }
-
-    public NoteSpecificationBuilder sortByUpdatedAtAsc() {
-        this.specification = this.specification.and(NoteSpecification.sortedByUpdatedAtAsc());
-        return this;
-    }
-
-    // Retorna a especificação construída, filtrando por ID do usuário
-    public Specification<NoteEntity> build(Long userId) {
-        return this.specification.and((root, query, criteriaBuilder) ->
-            criteriaBuilder.equal(root.get("userEntity").get("id"), userId)
-        );
-    }
+    buildSpecification("updatedAtDesc", (root, query, criteriaBuilder) -> {
+			query.orderBy(criteriaBuilder.desc(root.get("updatedAt")));
+			return null;
+		});
+		
+    buildSpecification("updatedAtAsc", (root, query, criteriaBuilder) -> {
+			query.orderBy(criteriaBuilder.asc(root.get("updatedAt")));
+			return null;
+		});
+  }
 }

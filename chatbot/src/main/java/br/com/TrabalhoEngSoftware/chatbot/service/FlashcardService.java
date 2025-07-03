@@ -32,11 +32,14 @@ public class FlashcardService {
   private DeckRepository deckRepository;
   @Autowired
   private FlashcardTypeHandlerRegistry handlerRegistry;
+  @Autowired
+  private FlashcardSpecificationBuilder flashcardSpecificationBuilder;
 
-  public FlashcardService(FlashcardRepository flashcardRepository, DeckRepository deckRepository, FlashcardTypeHandlerRegistry handlerRegistry) {
+  public FlashcardService(FlashcardRepository flashcardRepository, DeckRepository deckRepository, FlashcardTypeHandlerRegistry handlerRegistry, FlashcardSpecificationBuilder flashcardSpecificationBuilder) {
     this.flashcardRepository = flashcardRepository;
     this.deckRepository = deckRepository;
     this.handlerRegistry = handlerRegistry;
+    this.flashcardSpecificationBuilder = flashcardSpecificationBuilder;
   }
 
   @Transactional
@@ -57,35 +60,17 @@ public class FlashcardService {
   }
 
   public Page<FlashcardDTO> listFlashcards(String word, String flashcardFilter, Long userId, Long deckId, String sortType, Pageable pageable) {
-    FlashcardSpecificationBuilder builder = new FlashcardSpecificationBuilder().filterByWord(word);
+    flashcardSpecificationBuilder.addWordFilter(word);
 
-    if(flashcardFilter.equalsIgnoreCase("dominatedFlashcards")) {
-      builder.filterByDominatedFlashcards();
-    } else if(flashcardFilter.equalsIgnoreCase("undominatedFlashcards")) {
-      builder.filterByUndominatedFlashcards();
-    } else if(flashcardFilter.equalsIgnoreCase("newFlashcards")) {
-      builder.filterByNewFlashcards();
-    } else if(flashcardFilter.equalsIgnoreCase("notNewFlashcards")) {
-      builder.filterByNotNewFlashcards();
-    } else if(flashcardFilter.equalsIgnoreCase("dueFlashcards")) {
-      builder.filterByDueFlashcards();
+    if(flashcardFilter != null && !flashcardFilter.trim().isEmpty()) {
+      flashcardSpecificationBuilder.addSpecification(flashcardFilter); // Adiciona o filtro nomeado
     }
 
-    if ("createdAtAsc".equalsIgnoreCase(sortType)) {
-      builder.sortByCreatedAtAsc();
-    } else if ("createdAtDesc".equalsIgnoreCase(sortType)) {
-      builder.sortByCreatedAtDesc();
-    } else if ("lastReviewedAtAsc".equalsIgnoreCase(sortType)) {
-      builder.sortByLastReviewedAtAsc();
-    } else if ("lastReviewedAtDesc".equalsIgnoreCase(sortType)) {
-      builder.sortByLastReviewedAtDesc();
-    } else if ("nextReviewAsc".equalsIgnoreCase(sortType)) {
-      builder.sortByNextReviewAsc();
-    } else if("nextReviewDesc".equalsIgnoreCase(sortType)) {
-      builder.sortByNextReviewDesc();
-    } 
+    if(sortType != null && !sortType.trim().isEmpty()) {
+      flashcardSpecificationBuilder.addSpecification(sortType); // Adiciona a ordenação nomeada
+    }
 
-    Specification<FlashcardEntity> specification = builder.build(userId, deckId);
+    Specification<FlashcardEntity> specification = flashcardSpecificationBuilder.build(deckId, "deckEntity");
     
     return flashcardRepository.findAll(specification, pageable).map(flashcardEntity -> {
       FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = handlerRegistry.getHandler(flashcardEntity.getType());

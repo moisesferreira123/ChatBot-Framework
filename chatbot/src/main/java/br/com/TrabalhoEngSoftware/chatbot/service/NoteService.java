@@ -42,19 +42,15 @@ public class NoteService {
 	}
 	
 	public Page<NoteSummaryDTO> listNotes(String title, Long userId, String sortType, Pageable pageable) {
-		NoteSpecificationBuilder builder = new NoteSpecificationBuilder().filterByTitle(title);
+		NoteSpecificationBuilder builder = new NoteSpecificationBuilder(title);
+
+		builder.addSpecification("filterByTitle");
 		
-		if ("createdAtAsc".equalsIgnoreCase(sortType)) {
-      builder.sortByCreatedAtAsc();
-    } else if ("createdAtDesc".equalsIgnoreCase(sortType)) {
-      builder.sortByCreatedAtDesc();
-    } else if ("updatedAtAsc".equalsIgnoreCase(sortType)) {
-      builder.sortByUpdatedAtAsc();
-    } else if ("updatedAtDesc".equalsIgnoreCase(sortType)) {
-      builder.sortByUpdatedAtDesc();
+		if(sortType != null && !sortType.trim().isEmpty()) {
+      builder.addSpecification(sortType); // Adiciona a ordenação nomeada
     }
 		
-		Specification<NoteEntity> specification = builder.build(userId);
+		Specification<NoteEntity> specification = builder.build(userId, "userEntity");
 		
 		return noteRepository.findAll(specification, pageable).map(NoteSummaryDTO::new);
 	}

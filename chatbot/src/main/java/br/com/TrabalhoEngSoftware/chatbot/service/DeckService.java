@@ -44,29 +44,15 @@ public class DeckService {
   }
 
   public Page<DeckSummaryDTO> listDecks(String title, String topic, Long userId, String sortType, Pageable pageable) {
-    DeckSpecificationBuilder builder = new DeckSpecificationBuilder().filterByTitle(title).filterByTopic(topic);
+    DeckSpecificationBuilder builder = new DeckSpecificationBuilder(title, topic);
+    builder.addSpecification("filterByTitle");
+    builder.addSpecification("filterByTopic");
 
-    if ("createdAtAsc".equalsIgnoreCase(sortType)) {
-      builder.sortByCreatedAtAsc();
-    } else if ("createdAtDesc".equalsIgnoreCase(sortType)) {
-      builder.sortByCreatedAtDesc();
-    } else if ("lastReviewedAtAsc".equalsIgnoreCase(sortType)) {
-      builder.sortByLastReviewedAtAsc();
-    } else if ("lastReviewedAtDesc".equalsIgnoreCase(sortType)) {
-      builder.sortByLastReviewedAtDesc();
-    } else if ("totalFlashcardsDesc".equalsIgnoreCase(sortType)) {
-      builder.sortByFlashcardsTotalDesc();
-    } else if("totalDueFlashcardsAsc".equalsIgnoreCase(sortType)) {
-      builder.sortByDueFlashcardsTotalAsc();
-    } else if("totalDueFlashcardsDesc".equalsIgnoreCase(sortType)) {
-      builder.sortByDueFlashcardsTotalDesc();
-    } else if("masteryLevelAsc".equalsIgnoreCase(sortType)) {
-      builder.sortByMasteryLevelAsc();
-    } else if("masteryLevelDesc".equalsIgnoreCase(sortType)) {
-      builder.sortByMasteryLevelDesc();
+    if(sortType != null && !sortType.trim().isEmpty()) {
+      builder.addSpecification(sortType); // Adiciona a ordenação nomeada
     }
 
-    Specification<DeckEntity> specification = builder.build(userId);
+    Specification<DeckEntity> specification = builder.build(userId, "userEntity");
     return deckRepository.findAll(specification, pageable).map(DeckSummaryDTO::new);
   }
 
