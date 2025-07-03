@@ -1,5 +1,9 @@
 package br.com.TrabalhoEngSoftware.chatbot.specification;
 
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
 import br.com.TrabalhoEngSoftware.chatbot.entity.DeckEntity;
 import br.com.TrabalhoEngSoftware.chatbot.entity.FlashcardEntity;
 import jakarta.persistence.criteria.Expression;
@@ -7,6 +11,8 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.ListJoin;
 import jakarta.persistence.criteria.Predicate;
 
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class DeckSpecificationBuilder extends SpecificationBuilder<DeckEntity> {
   private String title;
   private String topic;

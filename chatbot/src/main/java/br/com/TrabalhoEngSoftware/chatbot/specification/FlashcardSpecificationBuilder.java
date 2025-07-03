@@ -5,7 +5,6 @@ import br.com.TrabalhoEngSoftware.chatbot.exception.InvalidObjectDataException;
 import br.com.TrabalhoEngSoftware.chatbot.handler.FlashcardTypeSearchHandler; // Nova importação
 import br.com.TrabalhoEngSoftware.chatbot.handler.FlashcardTypeSearchRegistry; // Nova importação
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +13,6 @@ import java.util.Optional;
 
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-@ConditionalOnMissingBean(FlashcardSpecificationBuilder.class)
 public class FlashcardSpecificationBuilder extends SpecificationBuilder<FlashcardEntity> {
   
     private final FlashcardTypeSearchRegistry searchRegistry; // Injeta o registry
