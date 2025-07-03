@@ -12,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173") //FIXME: provavelmente desnecessário, colocado pra tentar resolver um bug
 @RestController
 @RequestMapping("/api/notes/{noteId}/sources") // URL base para o controlador, endpoint para a nota específica
 public class SourceController {
@@ -42,7 +42,7 @@ public class SourceController {
     // Não é necessário o noteId aqui, pois o sourceId já é suficiente para identificar o arquivo:
     @DeleteMapping("/{sourceId}")
     public ResponseEntity<Void> deleteSource(
-            @PathVariable Long noteId, // Não é necessário
+            @PathVariable Long noteId, // Não é necessário (mas já que está na url...)
             @PathVariable Long sourceId,
             Authentication authentication) {
         UserEntity user = (UserEntity) authentication.getPrincipal();

@@ -13,7 +13,8 @@ public class AiProviderConfig {
 
     @Bean
     @Primary
-    public ChatClient openAiChatClient(OpenAiChatModel openAiChatModel) {
+    public ChatClient openAiChatClient(OpenAiChatModel openAiChatModel) { 
+        // OBS: Funciona com qualquer API compatível com a da OpenAI (incluindo a do Gemini que é bem mais fácil de usar dessa forma do que via vertex)
         return ChatClient.create(openAiChatModel);
     }
 

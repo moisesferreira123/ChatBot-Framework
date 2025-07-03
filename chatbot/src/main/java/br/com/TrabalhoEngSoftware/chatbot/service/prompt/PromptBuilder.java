@@ -1,20 +1,29 @@
 package br.com.TrabalhoEngSoftware.chatbot.service.prompt;
 
-import br.com.TrabalhoEngSoftware.chatbot.entity.NoteEntity;
 import br.com.TrabalhoEngSoftware.chatbot.entity.SourceEntity;
 import br.com.TrabalhoEngSoftware.chatbot.repository.NoteRepository;
 import br.com.TrabalhoEngSoftware.chatbot.repository.SourceRepository;
+
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
+
+/* Roles:
+ * System: Guia o comportamento da IA e estilo de resposta, definindo parâmetros e regras para a forma que a LLM deve interpretar e responder a uma mensagem.
+ * User: Entradas do Usuário. Perguntas, afirmações e comandos que vão ser o principal determinante na resposta final da IA
+ * Assistant: Mantém rastreio das respostas anteriores da LLM para manter o fluxo de uma conversa (em casos de chats ou requests que precisem de continuidade entre si)
+ * Function/ToolResponse: Tarefas Específicas. Dá acesso à ferramentas para a LLM, como cálculos, busca na web, etc...
+*/
+//TODO: Adicionar suporte a Function-Calling
 @Component
 @Scope("prototype")
 public class PromptBuilder {
@@ -22,9 +31,11 @@ public class PromptBuilder {
     private NoteRepository noteRepository;
     private SourceRepository sourceRepository;
 
-    private String systemMessageContent = "";
-    private String userMessageContent = "";
+    private List<Message> promptMessages;
+    private String systemMessageContent;
     private StringBuilder contextBuilder = new StringBuilder();
+    private ChatOptions chatOptions;
+    private boolean hasUserMessage = false;
 
     @Autowired
     public void setNoteRepository(NoteRepository noteRepository) {
@@ -37,12 +48,23 @@ public class PromptBuilder {
     }
 
     public PromptBuilder withSystemMessage(String systemMessage) {
-        this.systemMessageContent = systemMessage;
+        systemMessageContent = systemMessage;
         return this;
     }
 
     public PromptBuilder withUserMessage(String userMessage) {
-        this.userMessageContent = userMessage;
+        promptMessages.add(new UserMessage(userMessage));
+        hasUserMessage = true;
+        return this;
+    }
+    
+    public PromptBuilder withAssistantMessage(String assistantMessage) {
+        promptMessages.add(new AssistantMessage(assistantMessage));
+        return this;
+    }
+
+    public PromptBuilder withOptions(ChatOptions modelOptions) {
+        chatOptions = modelOptions;
         return this;
     }
 
@@ -92,14 +114,14 @@ public class PromptBuilder {
         return this;
     }
 
-    public PromptBuilder forFlashcardGeneration(String noteContent, int count) {
-        this.systemMessageContent = "You are an AI assistant specialized in creating educational flashcards. " +
+    public PromptBuilder forFlashcardGeneration(String noteContent, int count) { //FIXME: Prompt de Demo pra usar no Kairo por enquanto, remover depois
+        withSystemMessage("You are an AI assistant specialized in creating educational flashcards. " +
                 "Based on the provided text, generate exactly " + count + " flashcards. " +
                 "Each flashcard must have a 'front' (a question, term, or concept) and a 'back' (the corresponding answer, definition, or explanation). " +
                 "The 'front' should be concise and suitable for a flashcard. The 'back' should also be concise but comprehensive enough to be useful. " +
                 "IMPORTANT: Respond ONLY with a valid JSON array of objects. Each object must have two keys: \"front\" and \"back\". Do not include any other text, explanations, or introductions in your response. " +
-                "Example format: [{\"front\": \"What is photosynthesis?\", \"back\": \"The process by which green plants use sunlight, water, and carbon dioxide to create their own food.\"}, {\"front\": \"Capital of France?\", \"back\": \"Paris\"}]";
-        this.userMessageContent = "Here is the text to generate flashcards from:\n\n" + noteContent;
+                "Example format: [{\"front\": \"What is photosynthesis?\", \"back\": \"The process by which green plants use sunlight, water, and carbon dioxide to create their own food.\"}, {\"front\": \"Capital of France?\", \"back\": \"Paris\"}]");
+        withUserMessage("Here is the text to generate flashcards from:\n\n" + noteContent);
         return this;
     }
 
@@ -109,14 +131,18 @@ public class PromptBuilder {
             effectiveSystemPrompt = "## Provided Context:\n" + contextBuilder.toString() + "\n## General Instructions for AI:\n" + effectiveSystemPrompt;
         }
 
-        List<Message> messages = new ArrayList<>();
         if (effectiveSystemPrompt != null && !effectiveSystemPrompt.trim().isEmpty()) {
-            messages.add(new SystemMessage(effectiveSystemPrompt));
+            promptMessages.add(new SystemMessage(effectiveSystemPrompt));
+        }
+        if (!hasUserMessage) {
+            promptMessages.add(new UserMessage("Please provide a response based on the context."));
         }
 
-        messages.add(new UserMessage(userMessageContent != null ? userMessageContent : "Please provide a response based on the context."));
-
-        return new Prompt(messages);
+        if (chatOptions != null) {
+            return new Prompt(promptMessages, chatOptions);
+        } else {
+            return new Prompt(promptMessages);
+        }
     }
 }
 
