@@ -20,12 +20,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import br.com.TrabalhoEngSoftwareFramework.framework.dto.FlashcardDTO;
 import br.com.TrabalhoEngSoftwareFramework.framework.dto.NoteDTO;
 import br.com.TrabalhoEngSoftwareFramework.framework.dto.UserAnswerDTO;
+import br.com.TrabalhoEngSoftwareFramework.framework.dto.FlashcardDTO;
 import br.com.TrabalhoEngSoftwareFramework.framework.entity.UserEntity;
-import br.com.TrabalhoEngSoftwareFramework.framework.service.AiService;
 import br.com.TrabalhoEngSoftwareFramework.framework.service.FlashcardService;
+import br.com.TrabalhoEngSoftwareFramework.framework.service.AiService;
 import br.com.TrabalhoEngSoftwareFramework.framework.service.NoteService;
 
 @RestController
@@ -41,6 +41,7 @@ public class FlashcardController {
 
   public static class GenerateFlashcardsRequest {
     private int count = 5; // Default count
+    private String provider;
 
     public int getCount() {
       return count;
@@ -48,6 +49,14 @@ public class FlashcardController {
 
     public void setCount(int count) {
       this.count = count;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
   }
 
@@ -111,9 +120,10 @@ public class FlashcardController {
     }
 
     int count = (request != null) ? request.getCount() : 5;
+    String provider = (request != null) ? request.getProvider() : "openAiChatClient";
 
     List<FlashcardDTO> suggestions = aiService.generateFlashcardSuggestions(note.getContent(),
-        currentUser.getId(), count);
+        currentUser.getId(), count, provider);
 
     if (suggestions.isEmpty()) {
       return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new ArrayList<>());

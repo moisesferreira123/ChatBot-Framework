@@ -1,74 +1,68 @@
 package br.com.TrabalhoEngSoftwareFramework.framework.controller;
 
-import reactor.core.publisher.Flux;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication; // Added
-import org.springframework.web.bind.annotation.*;
-
 import br.com.TrabalhoEngSoftwareFramework.framework.entity.UserEntity;
 import br.com.TrabalhoEngSoftwareFramework.framework.service.AiService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
-import java.util.List; // Added
+import java.util.List;
 
-// Wrapper para um request de completions
 class CompletionRequest {
     private String systemPrompt;
     private String userPrompt;
-    private Long noteId; // To provide context from a specific note
-    private List<Long> sourceIds; // To provide context from specific sources
+    private Long noteId;
+    private List<Long> sourceIds;
+    private String provider;
 
-    // Getters and setters for systemPrompt
     public String getSystemPrompt() { return systemPrompt; }
     public void setSystemPrompt(String systemPrompt) { this.systemPrompt = systemPrompt; }
-
-    // Getters and setters for userPrompt
     public String getUserPrompt() { return userPrompt; }
     public void setUserPrompt(String userPrompt) { this.userPrompt = userPrompt; }
-
-    // Getters and setters for noteId
     public Long getNoteId() { return noteId; }
     public void setNoteId(Long noteId) { this.noteId = noteId; }
-
-    // Getters and setters for sourceIds
     public List<Long> getSourceIds() { return sourceIds; }
     public void setSourceIds(List<Long> sourceIds) { this.sourceIds = sourceIds; }
+    public String getProvider() { return provider; }
+    public void setProvider(String provider) { this.provider = provider; }
 }
 
-
-/**
- * Controlador para lidar com requests relacionados à IA.
- * Expõe endpoints para interagir com o serviço de IA, como gerar complementações de texto.
- */
 @RestController
-@RequestMapping("/api/ai") // Rota base para os endpoints da API
+@RequestMapping("/api/ai")
 public class AiController {
 
     private final AiService aiService;
 
-    // Inject the AiService
-    @Autowired // Added Autowired for constructor injection clarity
+    @Autowired
     public AiController(AiService aiService) {
         this.aiService = aiService;
     }
 
-    /**
-     * Endpoint para solicitar uma conclusão do LLM.
-     *
-     * @param request O corpo do request contendo os prompts do sistema e do usuário, e opcionais noteId/sourceIds.
-     * @param authentication The current user's authentication details.
-     * @return A sugestão da LLM.
-     */
-    @PostMapping("/complete") // Handles POST requests to /api/ai/complete
+    @PostMapping("/complete")
     public String complete(@RequestBody CompletionRequest request, Authentication authentication) {
         UserEntity currentUser = (UserEntity) authentication.getPrincipal();
-        // Call the AiService to get the completion, now with noteId, sourceIds, and userId
         return aiService.getCompletion(
             request.getSystemPrompt(),
             request.getUserPrompt(),
             request.getNoteId(),
             request.getSourceIds(),
-            currentUser.getId()
+            currentUser.getId(),
+            request.getProvider()
+        );
+    }
+
+    @PostMapping(value = "/complete-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> completeStream(@RequestBody CompletionRequest request, Authentication authentication) {
+        UserEntity currentUser = (UserEntity) authentication.getPrincipal();
+        return aiService.getStreamCompletion(
+            request.getSystemPrompt(),
+            request.getUserPrompt(),
+            request.getNoteId(),
+            request.getSourceIds(),
+            currentUser.getId(),
+            request.getProvider()
         );
     }
 }
