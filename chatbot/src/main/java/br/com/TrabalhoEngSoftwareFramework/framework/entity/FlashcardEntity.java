@@ -3,12 +3,12 @@ package br.com.TrabalhoEngSoftwareFramework.framework.entity;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import br.com.TrabalhoEngSoftwareFramework.framework.dto.FlashcardDTO;
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.DiscriminatorType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
@@ -24,6 +24,7 @@ import jakarta.persistence.Table;
 @Table(name = "tb_flashcard")
 @EntityListeners(AuditingEntityListener.class)
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING)
 public abstract class FlashcardEntity {
 	
 	@Id
@@ -38,15 +39,11 @@ public abstract class FlashcardEntity {
 	protected LocalDateTime lastReviewedAt;
 
 	@Column(nullable = false)
-	protected String type;
+	protected String flashcardType;
 	
 	@ManyToOne
 	@JoinColumn(name="deck_id")
 	protected DeckEntity deckEntity;
-	
-	public FlashcardEntity(FlashcardDTO flashcard) {
-		BeanUtils.copyProperties(flashcard, this);
-	}
 	
 	public FlashcardEntity() {
 		
@@ -101,11 +98,11 @@ public abstract class FlashcardEntity {
 		this.deckEntity = deckEntity;
 	}
 
-	public String getType() {
-		return type;
+	public String getFlashcardType() {
+		return flashcardType;
 	}
 
-	public void setType(String type) {
-		this.type = type;
+	public void setFlashcardType(String flashcardType) {
+		this.flashcardType = flashcardType;
 	}
 }
