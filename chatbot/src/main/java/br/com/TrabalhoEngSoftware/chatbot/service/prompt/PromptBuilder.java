@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -103,11 +104,15 @@ public class PromptBuilder {
                     if (noteId == null || source.getNoteEntity().getId().equals(noteId)) {
                         contextBuilder.append("### Source (File: ").append(source.getFileName()).append("):\n");
                         //TODO: Utilizar RAG para arquivos grandes
-                        byte[] fileData = new ClassPathResource(source.getFilePath()).getContentAsByteArray();
-                        String mimeTypeString = Files.probeContentType(Paths.get(source.getFilePath()));
-                        MimeType mimeType = MimeTypeUtils.parseMimeType(mimeTypeString);
-                        //FIXME: Esse construtor de Media é deprecado, ver docs de novas versões para substituir
-                        extraContext.add(new UserMessage(contextBuilder.toString(), new Media(mimeType, fileData)));
+                        try {
+                            byte[] fileData = new ClassPathResource(source.getFilePath()).getContentAsByteArray();
+                            String mimeTypeString = Files.probeContentType(Paths.get(source.getFilePath()));
+                            MimeType mimeType = MimeTypeUtils.parseMimeType(mimeTypeString);
+                            //FIXME: Esse construtor de Media é deprecado, ver docs de novas versões para substituir
+                            extraContext.add(new UserMessage(contextBuilder.toString(), new Media(mimeType, fileData)));
+                        } catch (IOException e) {
+                            System.err.println("Error processing file: " + source.getFilePath() + " - " + e.getMessage());
+                        }
                     }
                 } else {
                     System.err.println("User " + userId + " attempted to access unauthorized source " + source.getId());
