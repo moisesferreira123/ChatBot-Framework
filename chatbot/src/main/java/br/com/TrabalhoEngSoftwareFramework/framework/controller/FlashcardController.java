@@ -30,7 +30,7 @@ import br.com.TrabalhoEngSoftwareFramework.framework.service.NoteService;
 
 @RestController
 @RequestMapping("api/flashcards")
-public class FlashcardController {
+public abstract class FlashcardController {
 
   @Autowired
   private FlashcardService flashcardService;
