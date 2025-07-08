@@ -18,7 +18,7 @@ import br.com.TrabalhoEngSoftwareFramework.framework.repository.DeckRepository;
 import br.com.TrabalhoEngSoftwareFramework.framework.specification.DeckSpecificationBuilder;
 
 @Service
-public class DeckService {
+public abstract class DeckService {
   
   @Autowired
   protected DeckRepository deckRepository;

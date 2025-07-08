@@ -24,7 +24,7 @@ import br.com.TrabalhoEngSoftwareFramework.framework.repository.FlashcardReposit
 import br.com.TrabalhoEngSoftwareFramework.framework.specification.FlashcardSpecificationBuilder;
 
 @Service
-public class FlashcardService {
+public abstract class FlashcardService {
   
   @Autowired
   protected FlashcardRepository flashcardRepository;

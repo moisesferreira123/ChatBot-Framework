@@ -21,7 +21,7 @@ import br.com.TrabalhoEngSoftwareFramework.framework.service.DeckService;
 
 @RestController
 @RequestMapping("api/decks")
-public class DeckController {
+public abstract class DeckController {
 
   @Autowired
   private DeckService deckService;
