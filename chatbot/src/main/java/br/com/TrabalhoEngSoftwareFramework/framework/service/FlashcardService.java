@@ -27,19 +27,16 @@ import br.com.TrabalhoEngSoftwareFramework.framework.specification.FlashcardSpec
 public class FlashcardService {
   
   @Autowired
-  private FlashcardRepository flashcardRepository;
+  protected FlashcardRepository flashcardRepository;
   @Autowired
-  private DeckRepository deckRepository;
+  protected DeckRepository deckRepository;
   @Autowired
-  private FlashcardTypeHandlerRegistry handlerRegistry;
+  protected FlashcardTypeHandlerRegistry handlerRegistry;
   @Autowired
-  private FlashcardSpecificationBuilder flashcardSpecificationBuilder;
+  protected FlashcardSpecificationBuilder flashcardSpecificationBuilder;
 
-  public FlashcardService(FlashcardRepository flashcardRepository, DeckRepository deckRepository, FlashcardTypeHandlerRegistry handlerRegistry, FlashcardSpecificationBuilder flashcardSpecificationBuilder) {
-    this.flashcardRepository = flashcardRepository;
-    this.deckRepository = deckRepository;
-    this.handlerRegistry = handlerRegistry;
-    this.flashcardSpecificationBuilder = flashcardSpecificationBuilder;
+  public FlashcardService() {
+
   }
 
   @Transactional
@@ -125,13 +122,10 @@ public class FlashcardService {
   @Transactional
   public int evaluateAnswer(Long flashcardId, UserAnswerDTO answer, Long userId) {
     FlashcardEntity flashcard = flashcardRepository.findById(flashcardId).orElseThrow(() -> new ObjectNotFoundException("Flashcard not found"));
-
     if(!flashcard.getDeckEntity().getUserEntity().getId().equals(userId)) {
       throw new UnauthorizedObjectAccessException("Unauthorized to review this flashcard");
     }
-
     FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = handlerRegistry.getHandler(flashcard.getFlashcardType());
-
     return handler.evaluateAnswer(flashcard, answer);
   }
 

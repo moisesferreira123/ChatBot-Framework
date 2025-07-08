@@ -64,11 +64,9 @@ public class FlashcardSpecificationBuilder extends SpecificationBuilder<Flashcar
             return this;
         }
 
-        String lowerCaseWordPattern = "%" + word.toLowerCase() + "%";
-
         super.specification = super.specification.and(
             (root, query, criteriaBuilder) -> {
-                String flashcardType = (root.get("type").as(String.class)).toString(); 
+                String flashcardType = (root.get("flashcardType").as(String.class)).toString(); 
                 
                 // Use o registry para encontrar o handler apropriado
                 Optional<FlashcardTypeSearchHandler> handlerOptional = this.searchRegistry.getHandler(flashcardType);
@@ -76,7 +74,7 @@ public class FlashcardSpecificationBuilder extends SpecificationBuilder<Flashcar
                 if (handlerOptional.isPresent()) {
                   FlashcardTypeSearchHandler handler = handlerOptional.get();
                   // Delega para o handler específico para obter a predicate
-                  return handler.getWordSearchPredicate(root, criteriaBuilder, lowerCaseWordPattern);
+                  return handler.getWordSearchPredicate(root, criteriaBuilder, word);
                 } else {
                   // Nenhum handler específico encontrado para este tipo, exclua da busca por palavra-chave
                   throw new InvalidObjectDataException("Aviso: Nenhum FlashcardTypeSearchHandler encontrado para o tipo: " + flashcardType + ". Flashcards deste tipo serão excluídos da busca por palavra-chave."); 

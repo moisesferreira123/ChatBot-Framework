@@ -21,10 +21,10 @@ import br.com.TrabalhoEngSoftwareFramework.framework.specification.DeckSpecifica
 public class DeckService {
   
   @Autowired
-  private DeckRepository deckRepository;
+  protected DeckRepository deckRepository;
 
   @Autowired
-  private TopicService topics;
+  protected TopicService topics;
 
   public DeckService (DeckRepository deckRepository) {
     this.deckRepository = deckRepository;

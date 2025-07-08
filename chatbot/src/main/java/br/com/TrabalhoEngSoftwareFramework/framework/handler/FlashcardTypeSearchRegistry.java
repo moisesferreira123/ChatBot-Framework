@@ -23,14 +23,13 @@ public class FlashcardTypeSearchRegistry {
   public void init() {
       for (FlashcardTypeSearchHandler handler : injectedHandlers) {
           handlers.put(handler.supportsType(), handler);
-          System.out.println("Registrando FlashcardTypeSearchHandler para tipo: " + handler.supportsType());
       }
   }
 
   /**
    * Recupera o handler de busca para um determinado tipo de flashcard.
    *
-   * @param type A string do tipo de flashcard (ex: "TEXT", "MULTIPLE_CHOICE").
+   * @param type A string do tipo de flashcard.
    * @return Um Optional contendo o handler se encontrado, ou vazio caso contrário.
    */
   public Optional<FlashcardTypeSearchHandler> getHandler(String type) {
