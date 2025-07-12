@@ -8,12 +8,21 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public abstract class FlashcardDTO {
 	
+	protected Long id;
 	protected LocalDateTime createdAt;
 	protected LocalDateTime lastReviewedAt;
 	protected String flashcardType;
 	
 	public FlashcardDTO() {
 		
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
 	}
 
 	public LocalDateTime getCreatedAt() {

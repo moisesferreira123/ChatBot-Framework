@@ -39,6 +39,7 @@ public abstract class FlashcardService {
 
   }
 
+  @SuppressWarnings("unchecked")
   @Transactional
   public void createFlashcard(FlashcardDTO flashcardDTO, Long deckId) {
     if (flashcardDTO.getFlashcardType() == null || flashcardDTO.getFlashcardType().trim().isEmpty()) {
@@ -46,7 +47,7 @@ public abstract class FlashcardService {
     }
     
     DeckEntity deck = deckRepository.findById(deckId).orElseThrow(() -> new ObjectNotFoundException("Flashcard deck not found"));
-    FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = handlerRegistry.getHandler(flashcardDTO.getFlashcardType());
+    FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = (FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO>) handlerRegistry.getHandler(flashcardDTO.getFlashcardType());
     
     FlashcardEntity flashcard = handler.createFlashcard(flashcardDTO);
     
@@ -56,6 +57,7 @@ public abstract class FlashcardService {
     flashcard.getDeckEntity().getFlashcards().add(flashcard);
   }
 
+  @SuppressWarnings("unchecked")
   public Page<FlashcardDTO> listFlashcards(String word, String flashcardFilter, Long userId, Long deckId, String sortType, Pageable pageable) {
     flashcardSpecificationBuilder.addWordFilter(word);
 
@@ -70,11 +72,12 @@ public abstract class FlashcardService {
     Specification<FlashcardEntity> specification = flashcardSpecificationBuilder.build(deckId, "deckEntity");
     
     return flashcardRepository.findAll(specification, pageable).map(flashcardEntity -> {
-      FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = handlerRegistry.getHandler(flashcardEntity.getFlashcardType());
+      FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = (FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO>) handlerRegistry.getHandler(flashcardEntity.getFlashcardType());
       return handler.entityToDTO(flashcardEntity);
     });
   }
 
+  @SuppressWarnings("unchecked")
   @Transactional
   public void updateFlashcard(Long flashcardId, FlashcardDTO flashcardDTO, Long userId) {
     FlashcardEntity flashcard = flashcardRepository.findById(flashcardId).orElseThrow(() -> new ObjectNotFoundException("Flashcard not found"));
@@ -91,7 +94,7 @@ public abstract class FlashcardService {
       throw new InvalidObjectDataException("Cannot change flashcard type during update. Existing type: " + flashcard.getFlashcardType() + ", Provided type: " + flashcardDTO.getFlashcardType());
     }
 
-    FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = handlerRegistry.getHandler(flashcardDTO.getFlashcardType());
+    FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = (FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO>) handlerRegistry.getHandler(flashcardDTO.getFlashcardType());
     handler.updateFlashcard(flashcard, flashcardDTO);
   }
 
@@ -106,6 +109,7 @@ public abstract class FlashcardService {
     flashcard.getDeckEntity().getFlashcards().remove(flashcard);
   }
 
+  @SuppressWarnings("unchecked")
   @Transactional
   public FlashcardDTO getFlashcardById(Long flashcardId, Long userId) {
     FlashcardEntity flashcard = flashcardRepository.findById(flashcardId).orElseThrow(() -> new ObjectNotFoundException("Flashcard not found"));
@@ -114,18 +118,19 @@ public abstract class FlashcardService {
       throw new UnauthorizedObjectAccessException("Unauthorized to get this flashcard");
     }
 
-    FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = handlerRegistry.getHandler(flashcard.getFlashcardType());
+    FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = (FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO>) handlerRegistry.getHandler(flashcard.getFlashcardType());
 
     return handler.entityToDTO(flashcard);
   }
 
+  @SuppressWarnings("unchecked")
   @Transactional
   public int evaluateAnswer(Long flashcardId, UserAnswerDTO answer, Long userId) {
     FlashcardEntity flashcard = flashcardRepository.findById(flashcardId).orElseThrow(() -> new ObjectNotFoundException("Flashcard not found"));
     if(!flashcard.getDeckEntity().getUserEntity().getId().equals(userId)) {
       throw new UnauthorizedObjectAccessException("Unauthorized to review this flashcard");
     }
-    FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = handlerRegistry.getHandler(flashcard.getFlashcardType());
+    FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = (FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO>) handlerRegistry.getHandler(flashcard.getFlashcardType());
     return handler.evaluateAnswer(flashcard, answer);
   }
 
