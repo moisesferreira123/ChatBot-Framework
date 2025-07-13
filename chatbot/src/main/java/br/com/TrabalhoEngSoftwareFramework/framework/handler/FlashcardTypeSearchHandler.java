@@ -1,11 +1,10 @@
 package br.com.TrabalhoEngSoftwareFramework.framework.handler;
 
-import br.com.TrabalhoEngSoftwareFramework.framework.entity.FlashcardEntity;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import org.springframework.data.jpa.domain.Specification;
 
-public interface FlashcardTypeSearchHandler {
+import br.com.TrabalhoEngSoftwareFramework.framework.entity.FlashcardEntity;
+
+public interface FlashcardTypeSearchHandler<E extends FlashcardEntity> {
   String supportsType(); // Retorna o  tipo de flashcard que este handler consegue processar
   
   /**
@@ -16,5 +15,5 @@ public interface FlashcardTypeSearchHandler {
    * @param lowerCaseWordPattern O padrão de palavra a ser buscado (já em minúsculas e com wildcards).
    * @return Uma Predicate que representa a condição de busca para este tipo, ou null se nenhuma condição se aplicar.
    */
-  Predicate getWordSearchPredicate(Root<FlashcardEntity> root, CriteriaBuilder criteriaBuilder, String word);
+  Specification<E> getWordSearchSpecification(String word);
 }

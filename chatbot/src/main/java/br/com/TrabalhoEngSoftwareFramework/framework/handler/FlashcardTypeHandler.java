@@ -8,6 +8,6 @@ public interface FlashcardTypeHandler<D extends FlashcardDTO, E extends Flashcar
   String supportsType(); // Retorna o  tipo de flashcard que este handler consegue processar
   E createFlashcard(D dto);
   void updateFlashcard(E flashcard, D dto);
-  int evaluateAnswer(E flashcard, U answer);
+  void evaluateAnswer(E flashcard, U answer);
   D entityToDTO(E flashcard);
 }

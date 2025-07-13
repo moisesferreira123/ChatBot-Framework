@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +20,6 @@ import br.com.TrabalhoEngSoftwareFramework.framework.handler.FlashcardTypeHandle
 import br.com.TrabalhoEngSoftwareFramework.framework.handler.FlashcardTypeHandlerRegistry;
 import br.com.TrabalhoEngSoftwareFramework.framework.repository.DeckRepository;
 import br.com.TrabalhoEngSoftwareFramework.framework.repository.FlashcardRepository;
-import br.com.TrabalhoEngSoftwareFramework.framework.specification.FlashcardSpecificationBuilder;
 
 @Service
 public abstract class FlashcardService {
@@ -32,8 +30,6 @@ public abstract class FlashcardService {
   protected DeckRepository deckRepository;
   @Autowired
   protected FlashcardTypeHandlerRegistry handlerRegistry;
-  @Autowired
-  protected FlashcardSpecificationBuilder flashcardSpecificationBuilder;
 
   public FlashcardService() {
 
@@ -51,31 +47,12 @@ public abstract class FlashcardService {
     
     FlashcardEntity flashcard = handler.createFlashcard(flashcardDTO);
     
-    // flashcard.setType(flashcardDTO.getFlashcardType());
     flashcard.setDeckEntity(deck);
     
     flashcard.getDeckEntity().getFlashcards().add(flashcard);
   }
 
-  @SuppressWarnings("unchecked")
-  public Page<FlashcardDTO> listFlashcards(String word, String flashcardFilter, Long userId, Long deckId, String sortType, Pageable pageable) {
-    flashcardSpecificationBuilder.addWordFilter(word);
-
-    if(flashcardFilter != null && !flashcardFilter.trim().isEmpty()) {
-      flashcardSpecificationBuilder.addSpecification(flashcardFilter); // Adiciona o filtro nomeado
-    }
-
-    if(sortType != null && !sortType.trim().isEmpty()) {
-      flashcardSpecificationBuilder.addSpecification(sortType); // Adiciona a ordenação nomeada
-    }
-
-    Specification<FlashcardEntity> specification = flashcardSpecificationBuilder.build(deckId, "deckEntity");
-    
-    return flashcardRepository.findAll(specification, pageable).map(flashcardEntity -> {
-      FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = (FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO>) handlerRegistry.getHandler(flashcardEntity.getFlashcardType());
-      return handler.entityToDTO(flashcardEntity);
-    });
-  }
+  public abstract Page<FlashcardDTO> listFlashcards(String word, String flashcardFilter, Long userId, Long deckId, String sortType, Pageable pageable);
 
   @SuppressWarnings("unchecked")
   @Transactional
@@ -125,13 +102,14 @@ public abstract class FlashcardService {
 
   @SuppressWarnings("unchecked")
   @Transactional
-  public int evaluateAnswer(Long flashcardId, UserAnswerDTO answer, Long userId) {
+  public void evaluateAnswer(Long flashcardId, UserAnswerDTO answer, Long userId) {
     FlashcardEntity flashcard = flashcardRepository.findById(flashcardId).orElseThrow(() -> new ObjectNotFoundException("Flashcard not found"));
     if(!flashcard.getDeckEntity().getUserEntity().getId().equals(userId)) {
       throw new UnauthorizedObjectAccessException("Unauthorized to review this flashcard");
     }
     FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO> handler = (FlashcardTypeHandler<FlashcardDTO, FlashcardEntity, UserAnswerDTO>) handlerRegistry.getHandler(flashcard.getFlashcardType());
-    return handler.evaluateAnswer(flashcard, answer);
+    handler.evaluateAnswer(flashcard, answer);
+    flashcardRepository.save(flashcard);
   }
 
   @Transactional

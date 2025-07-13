@@ -3,7 +3,6 @@ package br.com.TrabalhoEngSoftwareFramework.framework.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,7 +14,6 @@ import br.com.TrabalhoEngSoftwareFramework.framework.exception.InvalidObjectData
 import br.com.TrabalhoEngSoftwareFramework.framework.exception.ObjectNotFoundException;
 import br.com.TrabalhoEngSoftwareFramework.framework.exception.UnauthorizedObjectAccessException;
 import br.com.TrabalhoEngSoftwareFramework.framework.repository.DeckRepository;
-import br.com.TrabalhoEngSoftwareFramework.framework.specification.DeckSpecificationBuilder;
 
 @Service
 public abstract class DeckService {
@@ -43,18 +41,7 @@ public abstract class DeckService {
     deckRepository.save(deck);
   }
 
-  public Page<DeckSummaryDTO> listDecks(String title, String topic, Long userId, String sortType, Pageable pageable) {
-    DeckSpecificationBuilder builder = new DeckSpecificationBuilder(title, topic);
-    builder.addSpecification("filterByTitle");
-    builder.addSpecification("filterByTopic");
-
-    if(sortType != null && !sortType.trim().isEmpty()) {
-      builder.addSpecification(sortType); // Adiciona a ordenação nomeada
-    }
-
-    Specification<DeckEntity> specification = builder.build(userId, "userEntity");
-    return deckRepository.findAll(specification, pageable).map(DeckSummaryDTO::new);
-  }
+  public abstract Page<DeckSummaryDTO> listDecks(String title, String topic, Long userId, String sortType, Pageable pageable); 
 
   @Transactional 
   public DeckSummaryDTO updateDeck(Long deckId, DeckSummaryDTO deckSummaryDTO, Long userId) {

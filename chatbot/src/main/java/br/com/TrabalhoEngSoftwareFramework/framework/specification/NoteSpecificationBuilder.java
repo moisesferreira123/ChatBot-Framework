@@ -16,8 +16,10 @@ public class NoteSpecificationBuilder extends SpecificationBuilder<NoteEntity> {
 	public NoteSpecificationBuilder(String title) {
     super();
     this.title = title;
+  }
 
-    buildSpecification("filterByTitle", (root, query, criteriaBuilder)-> {
+	protected void registerAllSpecifications() {
+		buildSpecification("filterByTitle", (root, query, criteriaBuilder)-> {
 			Predicate titlePredicate = criteriaBuilder.conjunction();
 			if(this.title != null && !this.title.isEmpty()) {
 				titlePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), "%" + this.title.toLowerCase() + "%");
@@ -44,5 +46,5 @@ public class NoteSpecificationBuilder extends SpecificationBuilder<NoteEntity> {
 			query.orderBy(criteriaBuilder.asc(root.get("updatedAt")));
 			return null;
 		});
-  }
+	}
 }

@@ -1,9 +1,5 @@
 package br.com.TrabalhoEngSoftwareFramework.framework.specification;
 
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
-
 import br.com.TrabalhoEngSoftwareFramework.framework.entity.DeckEntity;
 import br.com.TrabalhoEngSoftwareFramework.framework.entity.FlashcardEntity;
 import jakarta.persistence.criteria.Expression;
@@ -11,9 +7,7 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.ListJoin;
 import jakarta.persistence.criteria.Predicate;
 
-@Component
-@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class DeckSpecificationBuilder extends SpecificationBuilder<DeckEntity> {
+public abstract class DeckSpecificationBuilder extends SpecificationBuilder<DeckEntity> {
   private String title;
   private String topic;
 
@@ -49,7 +43,7 @@ public class DeckSpecificationBuilder extends SpecificationBuilder<DeckEntity> {
       return criteriaBuilder.conjunction();
     });
 
-    buildSpecification("lastReviewedAtAsc", (root, query, criteriaBuilder) -> {
+    buildSpecification("lastReviewedAtDesc", (root, query, criteriaBuilder) -> {
 	    Expression<Object> nullsLast = criteriaBuilder.selectCase()
 	        .when(criteriaBuilder.isNull(root.get("lastReviewedAt")), 1)
 	        .otherwise(0);
@@ -61,7 +55,7 @@ public class DeckSpecificationBuilder extends SpecificationBuilder<DeckEntity> {
 	    return null;
 	  });
         
-    buildSpecification("lastReviewedAtDesc", (root, query, criteriaBuilder) -> {
+    buildSpecification("lastReviewedAtAsc", (root, query, criteriaBuilder) -> {
       query.orderBy(criteriaBuilder.asc(root.get("lastReviewedAt")));
       return null;
     });

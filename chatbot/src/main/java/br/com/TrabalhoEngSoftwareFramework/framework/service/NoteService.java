@@ -44,10 +44,10 @@ public class NoteService {
 	public Page<NoteSummaryDTO> listNotes(String title, Long userId, String sortType, Pageable pageable) {
 		NoteSpecificationBuilder builder = new NoteSpecificationBuilder(title);
 
-		builder.addSpecification("filterByTitle");
+		builder.addDesiredSpecification("filterByTitle");
 		
 		if(sortType != null && !sortType.trim().isEmpty()) {
-      builder.addSpecification(sortType); // Adiciona a ordenação nomeada
+      builder.addDesiredSpecification(sortType); // Adiciona a ordenação nomeada
     }
 		
 		Specification<NoteEntity> specification = builder.build(userId, "userEntity");

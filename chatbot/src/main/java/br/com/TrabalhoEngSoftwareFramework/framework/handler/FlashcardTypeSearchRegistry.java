@@ -1,29 +1,24 @@
 package br.com.TrabalhoEngSoftwareFramework.framework.handler;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
+import br.com.TrabalhoEngSoftwareFramework.framework.exception.InvalidObjectDataException;
 
 @Component
 public class FlashcardTypeSearchRegistry {
-  private final Map<String, FlashcardTypeSearchHandler> handlers = new HashMap<>();
-  // O Spring injetará automaticamente uma lista de todos os beans que implementam FlashcardTypeSearchHandler
-  private final List<FlashcardTypeSearchHandler> injectedHandlers;
+  private Map<String, FlashcardTypeSearchHandler<?>> handlers;
   
-  public FlashcardTypeSearchRegistry(List<FlashcardTypeSearchHandler> injectedHandlers) {
-      this.injectedHandlers = injectedHandlers;
+  public FlashcardTypeSearchRegistry(List<FlashcardTypeSearchHandler<?>> injectedHandlers) {
+      this.handlers = injectedHandlers.stream().collect(Collectors.toMap(FlashcardTypeSearchHandler::supportsType, Function.identity()));
   }
 
-  @PostConstruct // Este método é executado após a injeção de dependências
-  public void init() {
-      for (FlashcardTypeSearchHandler handler : injectedHandlers) {
-          handlers.put(handler.supportsType(), handler);
-      }
+  public Map<String, FlashcardTypeSearchHandler<?>> getHandlers() {
+    return handlers;
   }
 
   /**
@@ -32,7 +27,15 @@ public class FlashcardTypeSearchRegistry {
    * @param type A string do tipo de flashcard.
    * @return Um Optional contendo o handler se encontrado, ou vazio caso contrário.
    */
-  public Optional<FlashcardTypeSearchHandler> getHandler(String type) {
-      return Optional.ofNullable(handlers.get(type));
+  public FlashcardTypeSearchHandler<?> getHandler(String type) {
+    FlashcardTypeSearchHandler<?> handler = handlers.get(type);
+    if (handler == null) {
+        throw new InvalidObjectDataException(
+            "No Search handler found for flashcard type: '" + type + "'. " +
+            "Please ensure an implementation of FlashcardTypeHandler " +
+            "for this type is provided by your application and is discoverable by Spring."
+        );
+    }
+    return handler;
   }
 }

@@ -1,19 +1,15 @@
 package br.com.TrabalhoEngSoftwareFramework.framework.specification; 
 
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+import java.util.Map;
+
+import org.springframework.data.jpa.domain.Specification;
 
 import br.com.TrabalhoEngSoftwareFramework.framework.entity.FlashcardEntity;
-import br.com.TrabalhoEngSoftwareFramework.framework.exception.InvalidObjectDataException;
 import br.com.TrabalhoEngSoftwareFramework.framework.handler.FlashcardTypeSearchHandler;
 import br.com.TrabalhoEngSoftwareFramework.framework.handler.FlashcardTypeSearchRegistry;
 import jakarta.persistence.criteria.Expression;
-import java.util.Optional;
 
-@Component
-@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class FlashcardSpecificationBuilder extends SpecificationBuilder<FlashcardEntity> {
+public abstract class FlashcardSpecificationBuilder extends SpecificationBuilder<FlashcardEntity> {
   
     private final FlashcardTypeSearchRegistry searchRegistry; // Injeta o registry
     
@@ -23,7 +19,7 @@ public class FlashcardSpecificationBuilder extends SpecificationBuilder<Flashcar
         this.searchRegistry = searchRegistry;
 
         // ====================================================================
-        // ORDENAÇÕES PADRÃO/FRAMEWORK-LEVEL REGISTRADAS AQUI
+        // ESPECIFICAÇÕES PADRÕES/FRAMEWORK-LEVEL REGISTRADAS AQUI
         // ====================================================================
         buildSpecification("createdAtAsc", (root, query, criteriaBuilder) -> {
           query.orderBy(criteriaBuilder.asc(root.get("createdAt")));
@@ -64,23 +60,29 @@ public class FlashcardSpecificationBuilder extends SpecificationBuilder<Flashcar
             return this;
         }
 
-        super.specification = super.specification.and(
-            (root, query, criteriaBuilder) -> {
-                String flashcardType = (root.get("flashcardType").as(String.class)).toString(); 
-                
-                // Use o registry para encontrar o handler apropriado
-                Optional<FlashcardTypeSearchHandler> handlerOptional = this.searchRegistry.getHandler(flashcardType);
+        Map<String, FlashcardTypeSearchHandler<? extends FlashcardEntity>> allHandlesType = searchRegistry.getHandlers();
+        Specification<FlashcardEntity> combinedSpec = Specification.where(null);
 
-                if (handlerOptional.isPresent()) {
-                  FlashcardTypeSearchHandler handler = handlerOptional.get();
-                  // Delega para o handler específico para obter a predicate
-                  return handler.getWordSearchPredicate(root, criteriaBuilder, word);
-                } else {
-                  // Nenhum handler específico encontrado para este tipo, exclua da busca por palavra-chave
-                  throw new InvalidObjectDataException("Aviso: Nenhum FlashcardTypeSearchHandler encontrado para o tipo: " + flashcardType + ". Flashcards deste tipo serão excluídos da busca por palavra-chave."); 
-                }
-            }
-        );
+        for (Map.Entry<String, FlashcardTypeSearchHandler<? extends FlashcardEntity>> entry : allHandlesType.entrySet()) {
+            String type = entry.getKey();
+            FlashcardTypeSearchHandler<? extends FlashcardEntity> handler = entry.getValue();
+    
+            // Filtro por tipo específico
+            Specification<FlashcardEntity> specType = (r, q, cb) -> cb.equal(r.get("flashcardType"), type);
+    
+            // Filtro adicional do handler
+            @SuppressWarnings("unchecked")
+            Specification<FlashcardEntity> handlerSpec = (Specification<FlashcardEntity>) handler.getWordSearchSpecification(word);
+    
+            // Combina: (tipo == X) AND (filtro handler de X)
+            Specification<FlashcardEntity> spec = specType.and(handlerSpec);
+    
+            // Acumula com OR: tipo A OU tipo B OU tipo C ...
+            combinedSpec = combinedSpec.or(spec);
+        }
+        
+        super.desiredSpecification = super.desiredSpecification.and(combinedSpec);
+        
         return this; 
     }
 }
