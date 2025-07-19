@@ -1,58 +1,28 @@
 package br.com.TrabalhoEngSoftwareFramework.framework.service;
 
-import br.com.TrabalhoEngSoftwareFramework.framework.dto.FlashcardDTO;
-import br.com.TrabalhoEngSoftwareFramework.framework.service.provider.AiProvider;
-import br.com.TrabalhoEngSoftwareFramework.framework.service.prompt.PromptBuilder;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 
 import reactor.core.publisher.Flux;
 
-import java.util.List;
-import java.util.Map;
-
 @Service
 public class AiService {
+    @Autowired
+    private ChatClient chatClient;
 
-    private final AiProvider aiProvider;
-    private final ObjectProvider<PromptBuilder> promptBuilderProvider;
-    private final Map<String, ChatClient> chatClients;
-
-    public AiService(AiProvider aiProvider, ObjectProvider<PromptBuilder> promptBuilderProvider, Map<String, ChatClient> chatClients) {
-        this.aiProvider = aiProvider;
-        this.promptBuilderProvider = promptBuilderProvider;
-        this.chatClients = chatClients;
+    public String getCompletion(Prompt prompt) {
+        return chatClient.prompt(prompt).call().content();
+    }
+    
+    public Flux<String> getStreamCompletion(Prompt prompt) {
+        return chatClient.prompt(prompt).stream().content();
     }
 
-    public String getCompletion(String systemPrompt, String userPrompt, Long noteId, List<Long> sourceIds, Long userId, String provider) {
-        ChatClient chatClient = chatClients.get(provider);
-        Prompt prompt = promptBuilderProvider.getObject()
-                .withSystemMessage(systemPrompt)
-                .withUserMessage(userPrompt)
-                .withNoteContext(noteId, userId)
-                .withSourceContext(sourceIds, noteId, userId)
-                .build();
-        return aiProvider.getCompletion(prompt, chatClient);
+    public <T> T getJsonCompletion(Prompt prompt, ParameterizedTypeReference<T> targetTypeRef) {
+        return chatClient.prompt(prompt).call().entity(targetTypeRef);
     }
 
-    public List<FlashcardDTO> generateFlashcardSuggestions(String noteContent, Long userId, int count, String provider) {
-        ChatClient chatClient = chatClients.get(provider);
-        Prompt prompt = promptBuilderProvider.getObject()
-                .forFlashcardGeneration(noteContent, count)
-                .build();
-        return aiProvider.getJsonCompletion(prompt, List.class, chatClient);
-    }
-
-    public Flux<String> getStreamCompletion(String systemPrompt, String userPrompt, Long noteId, List<Long> sourceIds, Long userId, String provider) {
-        ChatClient chatClient = chatClients.get(provider);
-        Prompt prompt = promptBuilderProvider.getObject()
-                .withSystemMessage(systemPrompt)
-                .withUserMessage(userPrompt)
-                .withNoteContext(noteId, userId)
-                .withSourceContext(sourceIds, noteId, userId)
-                .build();
-        return aiProvider.getStreamCompletion(prompt, chatClient);
-    }
 }

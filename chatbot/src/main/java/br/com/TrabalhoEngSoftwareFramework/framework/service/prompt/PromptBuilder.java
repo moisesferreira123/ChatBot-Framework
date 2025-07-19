@@ -4,9 +4,12 @@ import br.com.TrabalhoEngSoftwareFramework.framework.entity.SourceEntity;
 import br.com.TrabalhoEngSoftwareFramework.framework.repository.NoteRepository;
 import br.com.TrabalhoEngSoftwareFramework.framework.repository.SourceRepository;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.messages.Media;
+import org.springframework.ai.content.Media;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.ChatOptions;
@@ -18,10 +21,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.ArrayList;
 
 
 /* Roles:
@@ -30,7 +35,6 @@ import java.util.List;
  * Assistant: Mantém rastreio das respostas anteriores da LLM para manter o fluxo de uma conversa (em casos de chats ou requests que precisem de continuidade entre si)
  * Function/ToolResponse: Tarefas Específicas. Dá acesso à ferramentas para a LLM, como cálculos, busca na web, etc...
 */
-//TODO: Adicionar suporte a Function-Calling
 @Component
 @Scope("prototype")
 public class PromptBuilder {
@@ -43,6 +47,13 @@ public class PromptBuilder {
     private List<UserMessage> extraContext;
     private ChatOptions chatOptions;
     private boolean hasUserMessage = false;
+    private final ObjectMapper objectMapper;
+
+    public PromptBuilder(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+        this.promptMessages = new ArrayList<>();
+        this.extraContext = new ArrayList<>();
+    }
 
     @Autowired
     public void setNoteRepository(NoteRepository noteRepository) {
@@ -105,11 +116,10 @@ public class PromptBuilder {
                         contextBuilder.append("### Source (File: ").append(source.getFileName()).append("):\n");
                         //TODO: Utilizar RAG para arquivos grandes
                         try {
-                            byte[] fileData = new ClassPathResource(source.getFilePath()).getContentAsByteArray();
+                            ClassPathResource fileData = new ClassPathResource(source.getFilePath());
                             String mimeTypeString = Files.probeContentType(Paths.get(source.getFilePath()));
                             MimeType mimeType = MimeTypeUtils.parseMimeType(mimeTypeString);
-                            //FIXME: Esse construtor de Media é deprecado, ver docs de novas versões para substituir
-                            extraContext.add(new UserMessage(contextBuilder.toString(), new Media(mimeType, fileData)));
+                            extraContext.add(UserMessage.builder().text(contextBuilder.toString()).media(new Media(mimeType, fileData)).build());
                         } catch (IOException e) {
                             System.err.println("Error processing file: " + source.getFilePath() + " - " + e.getMessage());
                         }
@@ -123,14 +133,18 @@ public class PromptBuilder {
         return this;
     }
 
-    public PromptBuilder forFlashcardGeneration(String noteContent, int count) { //FIXME: Prompt de Demo pra usar no Kairo por enquanto, remover depois
-        withSystemMessage("You are an AI assistant specialized in creating educational flashcards. " +
+    public <T> PromptBuilder withStructuredOutput(String noteContent, Class<T> targetType, int count) {
+        try {
+            withSystemMessage(
+                "You are an AI assistant specialized in creating educational flashcards. " +
                 "Based on the provided text, generate exactly " + count + " flashcards. " +
-                "Each flashcard must have a 'front' (a question, term, or concept) and a 'back' (the corresponding answer, definition, or explanation). " +
-                "The 'front' should be concise and suitable for a flashcard. The 'back' should also be concise but comprehensive enough to be useful. " +
-                "IMPORTANT: Respond ONLY with a valid JSON array of objects. Each object must have two keys: \"front\" and \"back\". Do not include any other text, explanations, or introductions in your response. " +
-                "Example format: [{\"front\": \"What is photosynthesis?\", \"back\": \"The process by which green plants use sunlight, water, and carbon dioxide to create their own food.\"}, {\"front\": \"Capital of France?\", \"back\": \"Paris\"}]");
-        withUserMessage("Here is the text to generate flashcards from:\n\n" + noteContent);
+                "IMPORTANT: Respond ONLY with a valid JSON array of objects. Each object must follow the specified format: " + objectMapper.writeValueAsString(targetType)
+                + "Do not include any other text, explanations, or introductions in your response. "
+            );
+        } catch (JsonProcessingException e) {
+            System.out.println("Could not serialize the provided type. Please try again");
+            return this;
+        }
         return this;
     }
 
@@ -140,15 +154,12 @@ public class PromptBuilder {
         if (effectiveSystemPrompt != null && !effectiveSystemPrompt.trim().isEmpty()) {
             promptMessages.add(new SystemMessage(effectiveSystemPrompt));
         }
+        if (!extraContext.isEmpty()) { 
+            promptMessages.addAll(extraContext);   
+        }
         if (!hasUserMessage) {
             promptMessages.add(new UserMessage("Please provide a response based on the context."));
         }
-        if (!extraContext.isEmpty()) { 
-            //TODO: Experimentar diferentes ordens de mensagens, colocar o contexto adicional no final pode fazer com que a LLM acabe ignorando o input do próprio usuário (que ficaria no meio)
-            //OBS: Talvez também seja melhor deixar antes das mensagens do usuário para permitir caching do prompt.
-            promptMessages.addAll(extraContext);   
-        }
-
         if (chatOptions != null) {
             return new Prompt(promptMessages, chatOptions);
         } else {
